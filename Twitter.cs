@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
 
 namespace Uwitter
 {
-    class OAuth1
+    class Twitter
     {
         const string REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
         const string AUTHORIZE_URL = "https://api.twitter.com/oauth/authorize";
         const string ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
+        const string HOME_TIMELINE_URL = "https://api.twitter.com/1.1/statuses/home_timeline.json";
 
         string consumerKey;
         string consumerSecret;
@@ -24,12 +27,12 @@ namespace Uwitter
         string screenName;
         Random rand;
 
-        public OAuth1(string key, string secret)
+        public Twitter(string key, string secret)
         {
             initialize(key, secret);
         }
 
-        public OAuth1(string key, string secret, string token, string tokenSecret)
+        public Twitter(string key, string secret, string token, string tokenSecret)
         {
             initialize(key, secret);
             accessToken = token;
@@ -45,17 +48,17 @@ namespace Uwitter
 
         public bool GetRequestToken()
         {
-            SortedDictionary<string, string> parameters = SetupInitialParameters();
+            var parameters = SetupInitialParameters();
             parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", REQUEST_TOKEN_URL, parameters)));
 
-            string body = HttpGet(REQUEST_TOKEN_URL, parameters);
+            var body = HttpGet(REQUEST_TOKEN_URL, parameters);
             if (string.IsNullOrEmpty(body))
             {
                 return false;
             }
             foreach (string kv in body.Split('&'))
             {
-                string[] kvs = kv.Split(new char[]{'='}, 2);
+                var kvs = kv.Split(new char[]{'='}, 2);
                 if (kvs[0].Equals("oauth_token"))
                 {
                     requestToken = kvs[1];
@@ -81,19 +84,19 @@ namespace Uwitter
 
         public string GetAccessToken(string pin)
         {
-            SortedDictionary<string, string> parameters = SetupInitialParameters();
+            var parameters = SetupInitialParameters();
             parameters.Add("oauth_token", Uri.EscapeDataString(requestToken));
             parameters.Add("oauth_verifyer", pin);
             parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", ACCESS_TOKEN_URL, parameters)));
 
-            string body = HttpGet(ACCESS_TOKEN_URL, parameters);
+            var body = HttpGet(ACCESS_TOKEN_URL, parameters);
             if (string.IsNullOrEmpty(body))
             {
                 return null;
             }
             foreach (string kv in body.Split('&'))
             {
-                string[] kvs = kv.Split(new char[]{'='}, 2);
+                var kvs = kv.Split(new char[]{'='}, 2);
                 if (kvs[0].Equals("oauth_token"))
                 {
                     accessToken = kvs[1];
@@ -126,17 +129,42 @@ namespace Uwitter
             return screenName;
         }
 
+        public Timeline[] GetTimeline(string since_id = null)
+        {
+            var parameters = SetupInitialParameters();
+            if (!string.IsNullOrEmpty(since_id))
+            {
+                parameters.Add("since_id", since_id);
+            }
+            parameters.Add("count", "10");
+            parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+            parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", HOME_TIMELINE_URL, parameters, accessTokenSecret)));
+
+            var body = HttpGet(HOME_TIMELINE_URL, parameters);
+            if (string.IsNullOrEmpty(body))
+            {
+                return null;
+            }
+
+            var serializer = new DataContractJsonSerializer(typeof(Timeline[]));
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));
+            var obj = (Timeline[])serializer.ReadObject(stream);
+            stream.Close();
+
+            return obj;
+        }
+
         private string HttpGet(string url, SortedDictionary<string, string> parameters)
         {
-            WebRequest req = WebRequest.Create(url + '?' + JoinParameters(parameters));
+            var req = WebRequest.Create(url + '?' + JoinParameters(parameters));
             ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
 
             string body;
             try
             {
-                WebResponse res = req.GetResponse();
-                Stream stream = res.GetResponseStream();
-                StreamReader reader = new StreamReader(stream);
+                var res = req.GetResponse();
+                var stream = res.GetResponseStream();
+                var reader = new StreamReader(stream);
                 body = reader.ReadToEnd();
                 reader.Close();
                 stream.Close();
@@ -150,7 +178,7 @@ namespace Uwitter
 
         private SortedDictionary<string, string> SetupInitialParameters()
         {
-            SortedDictionary<string, string> parameters = new SortedDictionary<string, string>();
+            var parameters = new SortedDictionary<string, string>();
             parameters.Add("oauth_consumer_key", OAuthKey.CONSUMER_KEY);
             parameters.Add("oauth_nonce", GenerateNonce());
             parameters.Add("oauth_signature_method", "HMAC-SHA1");
@@ -162,7 +190,7 @@ namespace Uwitter
         private string GenerateNonce()
         {
             const string letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-            StringBuilder buf = new StringBuilder(32);
+            var buf = new StringBuilder(32);
             for (int i = 0; i < 32; ++i)
             {
                 buf.Append(letters[rand.Next(letters.Length)]);
@@ -172,15 +200,15 @@ namespace Uwitter
 
         private string GenerateSignature(string method, string url, IDictionary<string, string> parameters, string tokenSecret = "")
         {
-            string sigBase = method + '&' + Uri.EscapeDataString(url) + '&' + Uri.EscapeDataString(JoinParameters(parameters));
-            HMACSHA1 digest = new HMACSHA1();
+            var sigBase = method + '&' + Uri.EscapeDataString(url) + '&' + Uri.EscapeDataString(JoinParameters(parameters));
+            var digest = new HMACSHA1();
             digest.Key = Encoding.ASCII.GetBytes(consumerSecret + '&' + tokenSecret);
             return Convert.ToBase64String(digest.ComputeHash(Encoding.ASCII.GetBytes(sigBase)));
         }
 
         private string JoinParameters(IDictionary<string, string> parameters)
         {
-            StringBuilder buf = new StringBuilder();
+            var buf = new StringBuilder();
             foreach (var parameter in parameters)
             {
                 if (buf.Length > 0)

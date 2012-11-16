@@ -32,6 +32,9 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.button1 = new System.Windows.Forms.Button();
+            this.timerCheck = new System.Windows.Forms.Timer(this.components);
+            this.listTimeline = new System.Windows.Forms.ListView();
+            this.colText = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // notifyIcon
@@ -51,11 +54,37 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
+            // timerCheck
+            // 
+            this.timerCheck.Tick += new System.EventHandler(this.timerCheck_Tick);
+            // 
+            // listTimeline
+            // 
+            this.listTimeline.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listTimeline.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.colText});
+            this.listTimeline.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
+            this.listTimeline.Location = new System.Drawing.Point(0, 56);
+            this.listTimeline.MultiSelect = false;
+            this.listTimeline.Name = "listTimeline";
+            this.listTimeline.Size = new System.Drawing.Size(283, 206);
+            this.listTimeline.TabIndex = 1;
+            this.listTimeline.UseCompatibleStateImageBehavior = false;
+            this.listTimeline.View = System.Windows.Forms.View.Details;
+            this.listTimeline.ClientSizeChanged += new System.EventHandler(this.listTimeline_ClientSizeChanged);
+            // 
+            // colText
+            // 
+            this.colText.Text = "";
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 262);
+            this.Controls.Add(this.listTimeline);
             this.Controls.Add(this.button1);
             this.Name = "FormMain";
             this.Text = "Form1";
@@ -68,6 +97,9 @@
 
         private System.Windows.Forms.NotifyIcon notifyIcon;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Timer timerCheck;
+        private System.Windows.Forms.ListView listTimeline;
+        private System.Windows.Forms.ColumnHeader colText;
     }
 }
 

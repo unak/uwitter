@@ -8,7 +8,7 @@ namespace Uwitter
     {
         const string FIRST_TEXT_OF_BUTTON = "Twitterでこのアプリを認証する";
 
-        OAuth1 auth;
+        Twitter auth;
 
         public SettingForm()
         {
@@ -34,7 +34,7 @@ namespace Uwitter
         {
             if (auth != null && editPin.Enabled)
             {
-                string userName = auth.GetAccessToken(editPin.Text);
+                var userName = auth.GetAccessToken(editPin.Text);
                 editPin.Text = "";
                 editPin.Enabled = false;
                 btnAuthorize.Text = FIRST_TEXT_OF_BUTTON;
@@ -48,7 +48,7 @@ namespace Uwitter
             }
             else
             {
-                auth = new OAuth1(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET);
+                auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET);
                 if (!auth.GetRequestToken())
                 {
                     MessageBox.Show("なんかだめぽ", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
