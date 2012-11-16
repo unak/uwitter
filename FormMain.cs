@@ -1,23 +1,30 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
 
 namespace Uwitter
 {
     public partial class FormMain : Form
     {
-        public delegate bool EnumWindowsDelegate(IntPtr hwnd, UIntPtr lparam);
-        [DllImport("user32")]
-        public static extern IntPtr EnumWindows(EnumWindowsDelegate callback, UIntPtr lparam);
-        [DllImport("user32")]
-        public static extern int GetClassName(IntPtr hwnd, StringBuilder buf, int size);
-        [DllImport("user32")]
-        public static extern long SendMessage(IntPtr hwnd, uint msg, UIntPtr wparam, UIntPtr lparam);
+        OAuth1 auth;
 
         public FormMain()
         {
             InitializeComponent();
+
+            string screenName = Properties.Settings.Default.ScreenName;
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.AccessToken) &&
+                !string.IsNullOrEmpty(Properties.Settings.Default.AccessTokenSecret) &&
+                !string.IsNullOrEmpty(Properties.Settings.Default.UserId) &&
+                !string.IsNullOrEmpty(Properties.Settings.Default.ScreenName))
+            {
+                this.Text = Properties.Settings.Default.ScreenName + " - " + Application.ProductName;
+                auth = new OAuth1(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
+            }
+            else
+            {
+                this.Text = "(未認証) - " + Application.ProductName;
+                auth = null;
+            }
         }
 
         private void FormMain_ClientSizeChanged(object sender, EventArgs e)
@@ -41,6 +48,12 @@ namespace Uwitter
                 // テスト
                 notifyIcon.ShowBalloonTip(6000, "バルーンテスト", "これはバルーンのテストなのであります！", ToolTipIcon.None);
             }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            SettingForm setting = new SettingForm();
+            setting.ShowDialog();
         }
     }
 }

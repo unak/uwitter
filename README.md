@@ -14,6 +14,7 @@ Windows用のTwitterクライアントです。
 
 ビルドにはVisual C# 2010が必要なはずです。
 たぶんExpressでも大丈夫。
+ビルドの前に、OAuthKey_dummy.csをOAuthKey.csにリネームし、自分で入手したconsumer keyとconsumer secretを記述して下さい。
 
 つかいかた
 ----------
