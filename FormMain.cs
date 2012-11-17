@@ -194,14 +194,12 @@ namespace Uwitter
             {
                 e.Graphics.FillRectangle(Brushes.White, e.Bounds);
             }
-            var pen = new Pen(Brushes.DarkGray, 2);
-            e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom, e.Bounds.Right, e.Bounds.Bottom);
-            pen.Dispose();
+            using (var pen = new Pen(Brushes.DarkGray, 2))
+            {
+                e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom, e.Bounds.Right, e.Bounds.Bottom);
+            }
 
             var bounds = new Rectangle(e.Item.Position.X + ICON_SIZE + 4, e.Item.Position.Y, listTimeline.ClientSize.Width - (ICON_SIZE + 4), ITEM_HEIGHT);
-            var normalFont = new Font(FontFamily.GenericSansSerif, 8.5f, FontStyle.Regular);
-            var nameFont = new Font(normalFont, FontStyle.Bold);
-            var smallFont = new Font(FontFamily.GenericSansSerif, 8.0f, FontStyle.Regular);
 
             // icon
             lock (icons)
@@ -213,31 +211,36 @@ namespace Uwitter
                 }
             }
 
-            // name
-            e.Graphics.DrawString(e.Item.SubItems[1].Text, nameFont, Brushes.Black, bounds);
+            using (var normalFont = new Font(FontFamily.GenericSansSerif, 8.5f, FontStyle.Regular))
+            {
+                using (var nameFont = new Font(normalFont, FontStyle.Bold))
+                {
+                    // name
+                    e.Graphics.DrawString(e.Item.SubItems[1].Text, nameFont, Brushes.Black, bounds);
 
-            // screen_name
-            var size = e.Graphics.MeasureString(e.Item.SubItems[1].Text, nameFont);
-            e.Graphics.DrawString('@' + e.Item.SubItems[2].Text, normalFont, Brushes.DarkSlateGray, bounds.Left + size.Width + 4, bounds.Top);
+                    // screen_name
+                    var size = e.Graphics.MeasureString(e.Item.SubItems[1].Text, nameFont);
+                    e.Graphics.DrawString('@' + e.Item.SubItems[2].Text, normalFont, Brushes.DarkSlateGray, bounds.Left + size.Width + 4, bounds.Top);
 
-            // text
-            bounds.Y += nameFont.Height + 4;
-            bounds.Height = ITEM_HEIGHT - (nameFont.Height + 4) - 2;
-            e.Graphics.DrawString(e.Item.SubItems[0].Text, normalFont, Brushes.Black, bounds);
+                    // text
+                    bounds.Y += nameFont.Height + 4;
+                    bounds.Height = ITEM_HEIGHT - (nameFont.Height + 4) - 2;
+                    e.Graphics.DrawString(e.Item.SubItems[0].Text, normalFont, Brushes.Black, bounds);
 
-            // created_at
-            bounds.Height = smallFont.Height + 2;
-            bounds.Y = e.Item.Position.Y + ITEM_HEIGHT - bounds.Height - 2;
-            e.Graphics.DrawString(e.Item.SubItems[3].Text, smallFont, Brushes.DarkSlateGray, bounds);
+                    using (var smallFont = new Font(FontFamily.GenericSansSerif, 8.0f, FontStyle.Regular))
+                    {
+                        // created_at
+                        bounds.Height = smallFont.Height + 2;
+                        bounds.Y = e.Item.Position.Y + ITEM_HEIGHT - bounds.Height - 2;
+                        e.Graphics.DrawString(e.Item.SubItems[3].Text, smallFont, Brushes.DarkSlateGray, bounds);
 
-            // source
-            size = e.Graphics.MeasureString(e.Item.SubItems[3].Text, nameFont);
-            var source = Regex.Replace(e.Item.SubItems[4].Text, @"</?a\b[^>]*>", "", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            e.Graphics.DrawString(source + "で", smallFont, Brushes.DarkSlateGray, bounds.Left + size.Width, bounds.Top);
-
-            smallFont.Dispose();
-            nameFont.Dispose();
-            normalFont.Dispose();
+                        // source
+                        size = e.Graphics.MeasureString(e.Item.SubItems[3].Text, nameFont);
+                        var source = Regex.Replace(e.Item.SubItems[4].Text, @"</?a\b[^>]*>", "", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                        e.Graphics.DrawString(source + "で", smallFont, Brushes.DarkSlateGray, bounds.Left + size.Width, bounds.Top);
+                    }
+                }
+            }
         }
 
         private void listTimeline_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
@@ -279,7 +282,11 @@ namespace Uwitter
                         var data = Twitter.HttpGetBinary(url, null);
                         if (data != null)
                         {
-                            var icon = Image.FromStream(new MemoryStream(data));
+                            Image icon;
+                            using (var stream = new MemoryStream(data))
+                            {
+                                icon = Image.FromStream(stream);
+                            }
                             lock (icons)
                             {
                                 icons[screen_name] = icon;

@@ -156,9 +156,11 @@ namespace Uwitter
             }
 
             var serializer = new DataContractJsonSerializer(typeof(Timeline[]));
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));
-            var obj = (Timeline[])serializer.ReadObject(stream);
-            stream.Close();
+            Timeline[] obj;
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(body)))
+            {
+                obj = (Timeline[])serializer.ReadObject(stream);
+            }
 
             return obj;
         }
@@ -196,11 +198,13 @@ namespace Uwitter
             try
             {
                 var res = req.GetResponse();
-                var stream = res.GetResponseStream();
-                var reader = new StreamReader(stream);
-                body = reader.ReadToEnd();
-                reader.Close();
-                stream.Close();
+                using (var stream = res.GetResponseStream())
+                {
+                    using (var reader = new StreamReader(stream))
+                    {
+                        body = reader.ReadToEnd();
+                    }
+                }
             }
             catch (Exception)
             {
@@ -226,18 +230,20 @@ namespace Uwitter
             try
             {
                 var res = req.GetResponse();
-                var stream = res.GetResponseStream();
-                var reader = new System.IO.BinaryReader(stream);
-                var buf = new byte[4096];
-                int read;
-                while ((read = reader.Read(buf, 0, buf.Length)) > 0)
+                using (var stream = res.GetResponseStream())
                 {
-                    Array.Resize(ref buf, read);
-                    Array.Resize(ref body, body.Length + read);
-                    buf.CopyTo(body, body.Length - read);
+                    using (var reader = new System.IO.BinaryReader(stream))
+                    {
+                        var buf = new byte[4096];
+                        int read;
+                        while ((read = reader.Read(buf, 0, buf.Length)) > 0)
+                        {
+                            Array.Resize(ref buf, read);
+                            Array.Resize(ref body, body.Length + read);
+                            buf.CopyTo(body, body.Length - read);
+                        }
+                    }
                 }
-                reader.Close();
-                stream.Close();
             }
             catch (Exception ex)
             {
@@ -263,16 +269,19 @@ namespace Uwitter
             string body;
             try
             {
-                var stream = req.GetRequestStream();
-                stream.Write(data, 0, data.Length);
-                stream.Close();
+                using (var stream = req.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
 
                 var res = req.GetResponse();
-                stream = res.GetResponseStream();
-                var reader = new StreamReader(stream);
-                body = reader.ReadToEnd();
-                reader.Close();
-                stream.Close();
+                using (var stream = res.GetResponseStream())
+                {
+                    using (var reader = new StreamReader(stream))
+                    {
+                        body = reader.ReadToEnd();
+                    }
+                }
             }
             catch (Exception)
             {
