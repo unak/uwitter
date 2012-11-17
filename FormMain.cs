@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Reflection;
+using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Uwitter
@@ -17,7 +15,7 @@ namespace Uwitter
 
         Twitter twitter;
         string since_id;
-        IDictionary<string, Image> icons;
+        List<Timeline> timelines;
 
         public FormMain()
         {
@@ -44,12 +42,7 @@ namespace Uwitter
                 this.DesktopBounds = new Rectangle(Properties.Settings.Default.X, Properties.Settings.Default.Y, Properties.Settings.Default.Width, Properties.Settings.Default.Height);
             }
 
-            icons = new Dictionary<string, Image>();
-
-            // タイムライン表示の1行(1ツイート)の高さを調整するためのギミック
-            var dummyList = new ImageList();
-            dummyList.ImageSize = new Size(1, ITEM_HEIGHT);
-            listTimeline.SmallImageList = dummyList;
+            timelines = new List<Timeline>();
 
             SetNotifyIcon();
         }
@@ -146,27 +139,46 @@ namespace Uwitter
             }
 
             // タイムライン取得
-            var timelines = twitter.GetTimeline(since_id);
-            if (timelines != null)
+            var curTLs = twitter.GetTimeline(since_id);
+            if (curTLs != null)
             {
                 SetNotifyIcon();
-                for (int i = 0; i < timelines.Length; ++i)
+                for (int i = 0; i < curTLs.Length; ++i)
                 {
-                    var timeline = timelines[timelines.Length - i - 1];
-                    var item = new ListViewItem(new string[] { timeline.text, timeline.user.name, timeline.user.screen_name, timeline.created_at, timeline.source, timeline.id_str });
-                    listTimeline.Items.Insert(0, item);
+                    var timeline = curTLs[curTLs.Length - i - 1];
+                    timelines.Insert(0, timeline);
                     if (Convert.ToDecimal(timeline.id_str) > Convert.ToDecimal(since_id))
                     {
                         since_id = timeline.id_str;
                     }
-
-                    LoadUserIcon(timeline.user.screen_name, timeline.user.profile_image_url);
                 }
 
-                if (timelines.Length > 0 && !this.Visible)
+                var html = new StringBuilder();
+                html.Append("<html><body><table>");
+                foreach (var timeline in timelines)
+                {
+                    html.Append("<tr><td><img src=\"");
+                    html.Append(timeline.user.profile_image_url);
+                    html.Append("\"/></td><td>");
+                    html.Append("<b>");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.name));
+                    html.Append("</b> @");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append("<br/>");
+                    html.Append(WebUtility.HtmlEncode(timeline.text));
+                    html.Append("<br/>");
+                    html.Append(WebUtility.HtmlEncode(timeline.created_at));
+                    html.Append(" ");
+                    html.Append(timeline.source);
+                    html.Append("で</td></tr>");
+                }
+                html.Append("</table></body></html>");
+                webMain.DocumentText = html.ToString();
+
+                if (curTLs.Length > 0 && !this.Visible)
                 {
                     var buf = new StringBuilder();
-                    notifyIcon.ShowBalloonTip(15 * 1000, timelines[0].user.name + " @" + timelines[0].user.screen_name, timelines[0].text, ToolTipIcon.None);
+                    notifyIcon.ShowBalloonTip(15 * 1000, curTLs[0].user.name + " @" + curTLs[0].user.screen_name, curTLs[0].text, ToolTipIcon.None);
                 }
             }
             else
@@ -179,73 +191,42 @@ namespace Uwitter
             timerCheck.Start();
         }
 
-        private void listTimeline_ClientSizeChanged(object sender, EventArgs e)
+        private void webMain_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            colText.Width = listTimeline.ClientSize.Width;
+            webMain.Document.Click += new HtmlElementEventHandler(webMain_DocumentClick);
+            webMain.Document.Body.KeyDown += new HtmlElementEventHandler(webMain_KeyDown);
         }
 
-        private void listTimeline_DrawItem(object sender, DrawListViewItemEventArgs e)
+        private void webMain_DocumentClick(object sender, HtmlElementEventArgs e)
         {
-            if ((e.State & (ListViewItemStates.Selected | ListViewItemStates.Hot)) != 0)
+            var clicked = webMain.Document.GetElementFromPoint(e.MousePosition);
+            while (clicked != null)
             {
-                e.Graphics.FillRectangle(Brushes.WhiteSmoke, e.Bounds);
-            }
-            else
-            {
-                e.Graphics.FillRectangle(Brushes.White, e.Bounds);
-            }
-            using (var pen = new Pen(Brushes.DarkGray, 2))
-            {
-                e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom, e.Bounds.Right, e.Bounds.Bottom);
-            }
-
-            var bounds = new Rectangle(e.Item.Position.X + ICON_SIZE + 4, e.Item.Position.Y, listTimeline.ClientSize.Width - (ICON_SIZE + 4), ITEM_HEIGHT);
-
-            // icon
-            lock (icons)
-            {
-                Image icon;
-                if (icons.TryGetValue(e.Item.SubItems[1].Text, out icon) && icon != null)
+                if (clicked.TagName == "a" || clicked.TagName == "A")
                 {
-                    e.Graphics.DrawImage(icon, e.Item.Position.X, e.Item.Position.Y, ICON_SIZE, ICON_SIZE);
+                    break;
+                }
+                clicked = clicked.Parent;
+            }
+
+            if (clicked != null)
+            {
+                var href = clicked.GetAttribute("href");
+                if (!string.IsNullOrEmpty(href))
+                {
+                    Process.Start(href);
                 }
             }
-
-            using (var normalFont = new Font(FontFamily.GenericSansSerif, 8.5f, FontStyle.Regular))
-            {
-                using (var nameFont = new Font(normalFont, FontStyle.Bold))
-                {
-                    // name
-                    e.Graphics.DrawString(e.Item.SubItems[1].Text, nameFont, Brushes.Black, bounds);
-
-                    // screen_name
-                    var size = e.Graphics.MeasureString(e.Item.SubItems[1].Text, nameFont);
-                    e.Graphics.DrawString('@' + e.Item.SubItems[2].Text, normalFont, Brushes.DarkSlateGray, bounds.Left + size.Width + 4, bounds.Top);
-
-                    // text
-                    bounds.Y += nameFont.Height + 4;
-                    bounds.Height = ITEM_HEIGHT - (nameFont.Height + 4) - 2;
-                    e.Graphics.DrawString(e.Item.SubItems[0].Text, normalFont, Brushes.Black, bounds);
-
-                    using (var smallFont = new Font(FontFamily.GenericSansSerif, 8.0f, FontStyle.Regular))
-                    {
-                        // created_at
-                        bounds.Height = smallFont.Height + 2;
-                        bounds.Y = e.Item.Position.Y + ITEM_HEIGHT - bounds.Height - 2;
-                        e.Graphics.DrawString(e.Item.SubItems[3].Text, smallFont, Brushes.DarkSlateGray, bounds);
-
-                        // source
-                        size = e.Graphics.MeasureString(e.Item.SubItems[3].Text, nameFont);
-                        var source = Regex.Replace(e.Item.SubItems[4].Text, @"</?a\b[^>]*>", "", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                        e.Graphics.DrawString(source + "で", smallFont, Brushes.DarkSlateGray, bounds.Left + size.Width, bounds.Top);
-                    }
-                }
-            }
+            e.ReturnValue = false;
         }
 
-        private void listTimeline_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+        private void webMain_KeyDown(object sender, HtmlElementEventArgs e)
         {
-            // DrawItemでやっちゃってるので何もしないよ
+            if (e.KeyPressedCode == 0x09)
+            {
+                this.SelectNextControl(webMain, true, true, true, true);
+                e.ReturnValue = false;
+            }
         }
 
         private void SetNotifyIcon(bool error = false)
@@ -263,41 +244,6 @@ namespace Uwitter
             else
             {
                 notifyIcon.Icon = Properties.Resources.notify;
-            }
-        }
-
-        private void LoadUserIcon(string screen_name, string url)
-        {
-            lock (icons)
-            {
-                // まだテーブルにscreen_nameがないなら、誰も取得しに行っていない
-                if (!icons.ContainsKey(screen_name))
-                {
-                    // まず予約
-                    icons.Add(screen_name, null);
-
-                    // 別スレッドでアイコンを取りに行く
-                    Task.Factory.StartNew(() =>
-                    {
-                        var data = Twitter.HttpGetBinary(url, null);
-                        if (data != null)
-                        {
-                            Image icon;
-                            using (var stream = new MemoryStream(data))
-                            {
-                                icon = Image.FromStream(stream);
-                            }
-                            if (icon != null)
-                            {
-                                lock (icons)
-                                {
-                                    icons[screen_name] = icon;
-                                    listTimeline.Invalidate();
-                                }
-                            }
-                        }
-                    });
-                }
             }
         }
     }
