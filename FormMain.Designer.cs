@@ -87,7 +87,7 @@
             this.Controls.Add(this.listTimeline);
             this.Controls.Add(this.btnSetting);
             this.Name = "FormMain";
-            this.Text = "Form1";
+            this.Shown += new System.EventHandler(this.FormMain_Shown);
             this.ClientSizeChanged += new System.EventHandler(this.FormMain_ClientSizeChanged);
             this.ResumeLayout(false);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Windows.Forms;
 
 namespace Uwitter
@@ -13,7 +14,6 @@ namespace Uwitter
             InitializeComponent();
 
             listTimeline_ClientSizeChanged(null, null); // サイズ調整
-            timerCheck.Interval = 30 * 1000;    // XXX:FIXME!!!
             since_id = null;
             if (!string.IsNullOrEmpty(Properties.Settings.Default.AccessToken) &&
                 !string.IsNullOrEmpty(Properties.Settings.Default.AccessTokenSecret) &&
@@ -22,13 +22,27 @@ namespace Uwitter
             {
                 this.Text = Properties.Settings.Default.ScreenName + " - " + Application.ProductName;
                 auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
-                timerCheck_Tick(null, null);
             }
             else
             {
                 this.Text = "(未認証) - " + Application.ProductName;
                 auth = null;
-                timerCheck.Stop();  // 念のため
+            }
+        }
+
+        private void FormMain_Shown(object sender, EventArgs e)
+        {
+            if (auth != null)
+            {
+                if (Properties.Settings.Default.Interval > 0)
+                {
+                    timerCheck.Interval = Properties.Settings.Default.Interval;
+                }
+                else
+                {
+                    timerCheck.Interval = 60 * 1000;    // デフォルトは1分
+                }
+                timerCheck_Tick(null, null);
             }
         }
 
@@ -47,11 +61,6 @@ namespace Uwitter
                 this.Visible = true;
                 this.WindowState = FormWindowState.Normal;
                 this.Activate();
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                // テスト
-                notifyIcon.ShowBalloonTip(6000, "バルーンテスト", "これはバルーンのテストなのであります！", ToolTipIcon.None);
             }
         }
 
@@ -74,19 +83,24 @@ namespace Uwitter
 
             // タイムライン取得
             var timelines = auth.GetTimeline(since_id);
-            for (int i = 0; i < timelines.Length; ++i)
+            if (timelines != null)
             {
-                var timeline = timelines[timelines.Length - i - 1];
-                var item = new ListViewItem(new string[]{timeline.text, timeline.id_str});
-                listTimeline.Items.Insert(0, item);
-                if (Convert.ToDecimal(timeline.id_str) > Convert.ToDecimal(since_id))
+                for (int i = 0; i < timelines.Length; ++i)
                 {
-                    since_id = timeline.id_str;
+                    var timeline = timelines[timelines.Length - i - 1];
+                    var item = new ListViewItem(new string[] { timeline.text, timeline.id_str });
+                    listTimeline.Items.Insert(0, item);
+                    if (Convert.ToDecimal(timeline.id_str) > Convert.ToDecimal(since_id))
+                    {
+                        since_id = timeline.id_str;
+                    }
                 }
-            }
 
-            if (!this.Visible)
-            {
+                if (timelines.Length > 0 && !this.Visible)
+                {
+                    var buf = new StringBuilder();
+                    notifyIcon.ShowBalloonTip(15 * 1000, timelines[0].user.name + " @" + timelines[0].user.screen_name, timelines[0].text, ToolTipIcon.None);
+                }
             }
 
             timerCheck.Start();
