@@ -3,12 +3,15 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Uwitter
 {
     public partial class FormMain : Form
     {
+        const int ITEM_HEIGHT = 80;
+
         Twitter auth;
         string since_id;
 
@@ -39,6 +42,11 @@ namespace Uwitter
                 this.Width = Properties.Settings.Default.Width;
                 this.Height = Properties.Settings.Default.Height;
             }
+
+            // タイムライン表示の1行(1ツイート)の高さを調整するためのギミック
+            var dummyList = new ImageList();
+            dummyList.ImageSize = new Size(1, ITEM_HEIGHT);
+            listTimeline.SmallImageList = dummyList;
 
             SetNotifyIcon();
         }
@@ -133,7 +141,7 @@ namespace Uwitter
                 for (int i = 0; i < timelines.Length; ++i)
                 {
                     var timeline = timelines[timelines.Length - i - 1];
-                    var item = new ListViewItem(new string[] { timeline.text, timeline.id_str });
+                    var item = new ListViewItem(new string[] { timeline.text, timeline.user.name, timeline.user.screen_name, null, timeline.created_at, timeline.source, timeline.id_str });
                     listTimeline.Items.Insert(0, item);
                     if (Convert.ToDecimal(timeline.id_str) > Convert.ToDecimal(since_id))
                     {
@@ -176,6 +184,57 @@ namespace Uwitter
             {
                 notifyIcon.Icon = Properties.Resources.notify;
             }
+        }
+
+        private void listTimeline_DrawItem(object sender, DrawListViewItemEventArgs e)
+        {
+            if ((e.State & (ListViewItemStates.Selected | ListViewItemStates.Hot)) != 0)
+            {
+                e.Graphics.FillRectangle(Brushes.WhiteSmoke, e.Bounds);
+            }
+            else
+            {
+                e.Graphics.FillRectangle(Brushes.White, e.Bounds);
+            }
+            var pen = new Pen(Brushes.DarkGray, 2);
+            e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom, e.Bounds.Right, e.Bounds.Bottom);
+            pen.Dispose();
+
+            var bounds = new Rectangle(e.Item.Position.X, e.Item.Position.Y, listTimeline.ClientSize.Width, ITEM_HEIGHT);
+            var normalFont = new Font(FontFamily.GenericSansSerif, 8.5f, FontStyle.Regular);
+            var nameFont = new Font(normalFont, FontStyle.Bold);
+            var smallFont = new Font(FontFamily.GenericSansSerif, 8.0f, FontStyle.Regular);
+
+            // name
+            e.Graphics.DrawString(e.Item.SubItems[1].Text, nameFont, Brushes.Black, bounds);
+
+            // screen_name
+            var size = e.Graphics.MeasureString(e.Item.SubItems[1].Text, nameFont);
+            e.Graphics.DrawString('@' + e.Item.SubItems[2].Text, normalFont, Brushes.DarkSlateGray, bounds.Left + size.Width + 4, bounds.Top);
+
+            // text
+            bounds.Y += nameFont.Height + 4;
+            bounds.Height = ITEM_HEIGHT - (nameFont.Height + 4) - 2;
+            e.Graphics.DrawString(e.Item.SubItems[0].Text, normalFont, Brushes.Black, bounds);
+
+            // created_at
+            bounds.Height = smallFont.Height + 2;
+            bounds.Y = e.Item.Position.Y + ITEM_HEIGHT - bounds.Height - 2;
+            e.Graphics.DrawString(e.Item.SubItems[4].Text, smallFont, Brushes.DarkSlateGray, bounds);
+
+            // source
+            size = e.Graphics.MeasureString(e.Item.SubItems[4].Text, nameFont);
+            var source = Regex.Replace(e.Item.SubItems[5].Text, @"</?a\b[^>]*>", "", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            e.Graphics.DrawString(source + "で", smallFont, Brushes.DarkSlateGray, bounds.Left + size.Width, bounds.Top);
+
+            smallFont.Dispose();
+            nameFont.Dispose();
+            normalFont.Dispose();
+        }
+
+        private void listTimeline_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+        {
+            // DrawItemでやっちゃってるので何もしないよ
         }
     }
 }

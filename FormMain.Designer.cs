@@ -58,19 +58,24 @@
             // 
             // listTimeline
             // 
+            this.listTimeline.Activation = System.Windows.Forms.ItemActivation.OneClick;
             this.listTimeline.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.listTimeline.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colText});
+            this.listTimeline.FullRowSelect = true;
             this.listTimeline.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.listTimeline.Location = new System.Drawing.Point(0, 56);
             this.listTimeline.MultiSelect = false;
             this.listTimeline.Name = "listTimeline";
+            this.listTimeline.OwnerDraw = true;
             this.listTimeline.Size = new System.Drawing.Size(283, 206);
             this.listTimeline.TabIndex = 1;
             this.listTimeline.UseCompatibleStateImageBehavior = false;
             this.listTimeline.View = System.Windows.Forms.View.Details;
+            this.listTimeline.DrawItem += new System.Windows.Forms.DrawListViewItemEventHandler(this.listTimeline_DrawItem);
+            this.listTimeline.DrawSubItem += new System.Windows.Forms.DrawListViewSubItemEventHandler(this.listTimeline_DrawSubItem);
             this.listTimeline.ClientSizeChanged += new System.EventHandler(this.listTimeline_ClientSizeChanged);
             // 
             // colText
