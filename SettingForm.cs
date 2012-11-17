@@ -172,6 +172,11 @@ namespace Uwitter
             Properties.Settings.Default.Save();
         }
 
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Reload();
+        }
+
         private void chkUseProxy_CheckedChanged(object sender, EventArgs e)
         {
             if (chkUseProxy.Checked)

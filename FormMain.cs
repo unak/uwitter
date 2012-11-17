@@ -16,7 +16,6 @@ namespace Uwitter
         {
             InitializeComponent();
 
-            listTimeline_ClientSizeChanged(null, null); // サイズ調整
             since_id = null;
             if (!string.IsNullOrEmpty(Properties.Settings.Default.AccessToken) &&
                 !string.IsNullOrEmpty(Properties.Settings.Default.AccessTokenSecret) &&
@@ -30,6 +29,15 @@ namespace Uwitter
             {
                 this.Text = "(未認証) - " + Application.ProductName;
                 auth = null;
+            }
+
+            if (Properties.Settings.Default.Width != 0 && Properties.Settings.Default.Height != 0)
+            {
+                this.StartPosition = FormStartPosition.Manual;
+                this.Left = Properties.Settings.Default.X;
+                this.Top = Properties.Settings.Default.Y;
+                this.Width = Properties.Settings.Default.Width;
+                this.Height = Properties.Settings.Default.Height;
             }
 
             SetNotifyIcon();
@@ -57,22 +65,14 @@ namespace Uwitter
             {
                 this.Hide();
             }
-        }
-
-        private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
+            else if (this.WindowState == FormWindowState.Normal)
             {
-                if (this.Visible)
-                {
-                    this.Hide();
-                }
-                else
-                {
-                    this.Visible = true;
-                    this.WindowState = FormWindowState.Normal;
-                    this.Activate();
-                }
+                // XXX:FIXME!!! 位置保存だが、ここでやるのは頻度が高すぎてよくないか?
+                Properties.Settings.Default.X = this.Left;
+                Properties.Settings.Default.Y = this.Top;
+                Properties.Settings.Default.Width = this.Width;
+                Properties.Settings.Default.Height = this.Width;
+                Properties.Settings.Default.Save();
             }
         }
 
@@ -96,6 +96,23 @@ namespace Uwitter
                     auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
                     SetNotifyIcon();
                     timerCheck_Tick(null, null);
+                }
+            }
+        }
+
+        private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                if (this.Visible)
+                {
+                    this.Hide();
+                }
+                else
+                {
+                    this.Visible = true;
+                    this.WindowState = FormWindowState.Normal;
+                    this.Activate();
                 }
             }
         }

@@ -73,7 +73,7 @@
             this.tabAccount.Location = new System.Drawing.Point(4, 22);
             this.tabAccount.Name = "tabAccount";
             this.tabAccount.Padding = new System.Windows.Forms.Padding(3);
-            this.tabAccount.Size = new System.Drawing.Size(437, 253);
+            this.tabAccount.Size = new System.Drawing.Size(437, 215);
             this.tabAccount.TabIndex = 0;
             this.tabAccount.Text = "アカウント";
             this.tabAccount.UseVisualStyleBackColor = true;
@@ -244,6 +244,7 @@
             this.btnCancel.TabIndex = 2;
             this.btnCancel.Text = "キャンセル";
             this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // SettingForm
             // 
