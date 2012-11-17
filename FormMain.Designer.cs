@@ -34,6 +34,7 @@
             this.timerCheck = new System.Windows.Forms.Timer(this.components);
             this.listTimeline = new System.Windows.Forms.ListView();
             this.colText = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.editTweet = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // notifyIcon
@@ -44,9 +45,9 @@
             // 
             // btnSetting
             // 
-            this.btnSetting.Location = new System.Drawing.Point(10, 17);
+            this.btnSetting.Location = new System.Drawing.Point(202, -1);
             this.btnSetting.Name = "btnSetting";
-            this.btnSetting.Size = new System.Drawing.Size(263, 33);
+            this.btnSetting.Size = new System.Drawing.Size(81, 23);
             this.btnSetting.TabIndex = 0;
             this.btnSetting.Text = "設定(仮配置)";
             this.btnSetting.UseVisualStyleBackColor = true;
@@ -66,11 +67,11 @@
             this.colText});
             this.listTimeline.FullRowSelect = true;
             this.listTimeline.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.listTimeline.Location = new System.Drawing.Point(0, 56);
+            this.listTimeline.Location = new System.Drawing.Point(0, 110);
             this.listTimeline.MultiSelect = false;
             this.listTimeline.Name = "listTimeline";
             this.listTimeline.OwnerDraw = true;
-            this.listTimeline.Size = new System.Drawing.Size(283, 206);
+            this.listTimeline.Size = new System.Drawing.Size(283, 259);
             this.listTimeline.TabIndex = 1;
             this.listTimeline.UseCompatibleStateImageBehavior = false;
             this.listTimeline.View = System.Windows.Forms.View.Details;
@@ -82,17 +83,33 @@
             // 
             this.colText.Text = "";
             // 
+            // editTweet
+            // 
+            this.editTweet.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.editTweet.Location = new System.Drawing.Point(0, 31);
+            this.editTweet.MaxLength = 140;
+            this.editTweet.Multiline = true;
+            this.editTweet.Name = "editTweet";
+            this.editTweet.Size = new System.Drawing.Size(282, 79);
+            this.editTweet.TabIndex = 2;
+            this.editTweet.WordWrap = false;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(284, 262);
+            this.ClientSize = new System.Drawing.Size(284, 369);
+            this.Controls.Add(this.editTweet);
             this.Controls.Add(this.listTimeline);
             this.Controls.Add(this.btnSetting);
+            this.KeyPreview = true;
             this.Name = "FormMain";
             this.Shown += new System.EventHandler(this.FormMain_Shown);
             this.ClientSizeChanged += new System.EventHandler(this.FormMain_ClientSizeChanged);
+            this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.FormMain_KeyPress);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -103,6 +120,7 @@
         private System.Windows.Forms.Timer timerCheck;
         private System.Windows.Forms.ListView listTimeline;
         private System.Windows.Forms.ColumnHeader colText;
+        private System.Windows.Forms.TextBox editTweet;
     }
 }
 

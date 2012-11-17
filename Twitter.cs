@@ -16,6 +16,7 @@ namespace Uwitter
         const string AUTHORIZE_URL = "https://api.twitter.com/oauth/authorize";
         const string ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
         const string HOME_TIMELINE_URL = "https://api.twitter.com/1.1/statuses/home_timeline.json";
+        const string UPDATE_STATUS_URL = "https://api.twitter.com/1.1/statuses/update.json";
 
         string consumerKey;
         string consumerSecret;
@@ -31,7 +32,7 @@ namespace Uwitter
         {
             get
             {
-                return string.IsNullOrEmpty(accessTokenSecret);
+                return !string.IsNullOrEmpty(accessTokenSecret);
             }
         }
 
@@ -162,6 +163,22 @@ namespace Uwitter
             return obj;
         }
 
+        public bool SendTweet(string tweet)
+        {
+            var parameters = SetupInitialParameters();
+            parameters.Add("status", Uri.EscapeDataString(tweet));
+            parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+            parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("POST", UPDATE_STATUS_URL, parameters, accessTokenSecret)));
+
+            var body = HttpPost(UPDATE_STATUS_URL, parameters);
+            if (string.IsNullOrEmpty(body))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private string HttpGet(string url, SortedDictionary<string, string> parameters)
         {
             var req = WebRequest.Create(url + '?' + JoinParameters(parameters));
@@ -176,6 +193,40 @@ namespace Uwitter
             {
                 var res = req.GetResponse();
                 var stream = res.GetResponseStream();
+                var reader = new StreamReader(stream);
+                body = reader.ReadToEnd();
+                reader.Close();
+                stream.Close();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return body;
+        }
+
+        private string HttpPost(string url, SortedDictionary<string, string> parameters)
+        {
+            var req = WebRequest.Create(url);
+            if (Properties.Settings.Default.UseProxy)
+            {
+                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
+            }
+            ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
+            var data = Encoding.ASCII.GetBytes(JoinParameters(parameters));
+            req.Method = "POST";
+            req.ContentType = "application/x-www-form-urlencoded";
+            req.ContentLength = data.Length;
+
+            string body;
+            try
+            {
+                var stream = req.GetRequestStream();
+                stream.Write(data, 0, data.Length);
+                stream.Close();
+
+                var res = req.GetResponse();
+                stream = res.GetResponseStream();
                 var reader = new StreamReader(stream);
                 body = reader.ReadToEnd();
                 reader.Close();

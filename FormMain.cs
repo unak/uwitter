@@ -55,14 +55,6 @@ namespace Uwitter
         {
             if (auth != null)
             {
-                if (Properties.Settings.Default.Interval > 0)
-                {
-                    timerCheck.Interval = Properties.Settings.Default.Interval;
-                }
-                else
-                {
-                    timerCheck.Interval = 60 * 1000;    // デフォルトは1分
-                }
                 timerCheck_Tick(null, null);
             }
         }
@@ -81,6 +73,23 @@ namespace Uwitter
                 Properties.Settings.Default.Width = this.Width;
                 Properties.Settings.Default.Height = this.Width;
                 Properties.Settings.Default.Save();
+            }
+        }
+
+        private void FormMain_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == 0x0D && this.ActiveControl == editTweet)
+            {
+                if (!string.IsNullOrEmpty(editTweet.Text) && auth != null && auth.IsActive)
+                {
+                    if (auth.SendTweet(editTweet.Text))
+                    {
+                        editTweet.Clear();
+                        timerCheck.Interval = 5 * 1000; // 数秒待たないとツイートが反映されない
+                        timerCheck.Start();
+                    }
+                }
+                e.Handled = true;
             }
         }
 
@@ -160,6 +169,8 @@ namespace Uwitter
                 SetNotifyIcon(true);
             }
 
+            // Intervalは毎回再設定する(へんなタイミングで呼ぶことがよくあるので)
+            timerCheck.Interval = Properties.Settings.Default.Interval > 0 ? Properties.Settings.Default.Interval : 60 * 1000;  // デフォルト1分
             timerCheck.Start();
         }
 
