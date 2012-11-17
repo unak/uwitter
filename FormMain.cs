@@ -56,11 +56,18 @@ namespace Uwitter
 
         private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left && !this.Visible)
+            if (e.Button == MouseButtons.Left)
             {
-                this.Visible = true;
-                this.WindowState = FormWindowState.Normal;
-                this.Activate();
+                if (this.Visible)
+                {
+                    this.Hide();
+                }
+                else
+                {
+                    this.Visible = true;
+                    this.WindowState = FormWindowState.Normal;
+                    this.Activate();
+                }
             }
         }
 
