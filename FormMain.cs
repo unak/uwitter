@@ -287,10 +287,13 @@ namespace Uwitter
                             {
                                 icon = Image.FromStream(stream);
                             }
-                            lock (icons)
+                            if (icon != null)
                             {
-                                icons[screen_name] = icon;
-                                listTimeline.Invalidate();
+                                lock (icons)
+                                {
+                                    icons[screen_name] = icon;
+                                    listTimeline.Invalidate();
+                                }
                             }
                         }
                     });
