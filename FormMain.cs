@@ -12,7 +12,7 @@ namespace Uwitter
     {
         const int ITEM_HEIGHT = 80;
 
-        Twitter auth;
+        Twitter twitter;
         string since_id;
 
         public FormMain()
@@ -26,12 +26,12 @@ namespace Uwitter
                 !string.IsNullOrEmpty(Properties.Settings.Default.ScreenName))
             {
                 this.Text = Properties.Settings.Default.ScreenName + " - " + Application.ProductName;
-                auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
+                twitter = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
             }
             else
             {
                 this.Text = "(未認証) - " + Application.ProductName;
-                auth = null;
+                twitter = null;
             }
 
             if (Properties.Settings.Default.Width != 0 && Properties.Settings.Default.Height != 0)
@@ -53,7 +53,7 @@ namespace Uwitter
 
         private void FormMain_Shown(object sender, EventArgs e)
         {
-            if (auth != null)
+            if (twitter != null)
             {
                 timerCheck_Tick(null, null);
             }
@@ -80,9 +80,9 @@ namespace Uwitter
         {
             if (e.KeyChar == 0x0D && this.ActiveControl == editTweet)
             {
-                if (!string.IsNullOrEmpty(editTweet.Text) && auth != null && auth.IsActive)
+                if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
                 {
-                    if (auth.SendTweet(editTweet.Text))
+                    if (twitter.SendTweet(editTweet.Text))
                     {
                         editTweet.Clear();
                         timerCheck.Interval = 5 * 1000; // 数秒待たないとツイートが反映されない
@@ -104,13 +104,13 @@ namespace Uwitter
                 {
                     timerCheck.Stop();
                     this.Text = "(未認証) - " + Application.ProductName;
-                    auth = null;
+                    twitter = null;
                     SetNotifyIcon();
                 }
                 else
                 {
                     this.Text = Properties.Settings.Default.ScreenName + " - " + Application.ProductName;
-                    auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
+                    twitter = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
                     SetNotifyIcon();
                     timerCheck_Tick(null, null);
                 }
@@ -137,13 +137,13 @@ namespace Uwitter
         private void timerCheck_Tick(object sender, EventArgs e)
         {
             timerCheck.Stop();  // 再入を避けるため、いったん止める
-            if (auth == null)
+            if (twitter == null)
             {
                 return;
             }
 
             // タイムライン取得
-            var timelines = auth.GetTimeline(since_id);
+            var timelines = twitter.GetTimeline(since_id);
             if (timelines != null)
             {
                 SetNotifyIcon();
@@ -186,7 +186,7 @@ namespace Uwitter
                 // XXX:FIXME!!! エラーっぽいアイコン
                 notifyIcon.Icon = Properties.Resources.notify;
             }
-            else if (auth == null || !auth.IsActive)
+            else if (twitter == null || !twitter.IsActive)
             {
                 // XXX:FIXME!!! アクティブじゃないっぽいアイコン
                 notifyIcon.Icon = Properties.Resources.notify;

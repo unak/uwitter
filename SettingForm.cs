@@ -8,7 +8,7 @@ namespace Uwitter
     {
         const string FIRST_TEXT_OF_BUTTON = "Twitterでこのアプリを認証する";
 
-        Twitter auth;
+        Twitter twitter;
 
         public SettingForm()
         {
@@ -25,7 +25,7 @@ namespace Uwitter
                 linkUser.Text = "(未認証)";
                 linkUser.Enabled = false;
             }
-            auth = null;
+            twitter = null;
             editPin.Text = "";
             editPin.Enabled = false;
             btnAuthorize.Text = FIRST_TEXT_OF_BUTTON;
@@ -84,9 +84,9 @@ namespace Uwitter
 
         private void btnAuthorize_Click(object sender, EventArgs e)
         {
-            if (auth != null && editPin.Enabled)
+            if (twitter != null && editPin.Enabled)
             {
-                var userName = auth.GetAccessToken(editPin.Text);
+                var userName = twitter.GetAccessToken(editPin.Text);
                 editPin.Text = "";
                 editPin.Enabled = false;
                 btnAuthorize.Text = FIRST_TEXT_OF_BUTTON;
@@ -100,15 +100,15 @@ namespace Uwitter
             }
             else
             {
-                auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET);
-                if (!auth.GetRequestToken())
+                twitter = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET);
+                if (!twitter.GetRequestToken())
                 {
                     MessageBox.Show("なんかだめぽ", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 MessageBox.Show("Twitterで「うぃったー」を認証し、表示されるPINを入力して認証を完了してください。", Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                Process.Start(auth.GetAuthorizeUrl());
+                Process.Start(twitter.GetAuthorizeUrl());
 
                 editPin.Enabled = true;
                 btnAuthorize.Text = "認証を完了する";
