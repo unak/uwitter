@@ -31,7 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnSetting = new System.Windows.Forms.Button();
             this.timerCheck = new System.Windows.Forms.Timer(this.components);
             this.listTimeline = new System.Windows.Forms.ListView();
             this.colText = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -44,15 +44,15 @@
             this.notifyIcon.Visible = true;
             this.notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseClick);
             // 
-            // button1
+            // btnSetting
             // 
-            this.button1.Location = new System.Drawing.Point(10, 17);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(263, 33);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.btnSetting.Location = new System.Drawing.Point(10, 17);
+            this.btnSetting.Name = "btnSetting";
+            this.btnSetting.Size = new System.Drawing.Size(263, 33);
+            this.btnSetting.TabIndex = 0;
+            this.btnSetting.Text = "設定(仮配置)";
+            this.btnSetting.UseVisualStyleBackColor = true;
+            this.btnSetting.Click += new System.EventHandler(this.button1_Click);
             // 
             // timerCheck
             // 
@@ -60,9 +60,9 @@
             // 
             // listTimeline
             // 
-            this.listTimeline.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listTimeline.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.listTimeline.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colText});
             this.listTimeline.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
@@ -85,7 +85,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 262);
             this.Controls.Add(this.listTimeline);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnSetting);
             this.Name = "FormMain";
             this.Text = "Form1";
             this.ClientSizeChanged += new System.EventHandler(this.FormMain_ClientSizeChanged);
@@ -96,7 +96,7 @@
         #endregion
 
         private System.Windows.Forms.NotifyIcon notifyIcon;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnSetting;
         private System.Windows.Forms.Timer timerCheck;
         private System.Windows.Forms.ListView listTimeline;
         private System.Windows.Forms.ColumnHeader colText;

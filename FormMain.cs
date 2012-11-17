@@ -58,7 +58,10 @@ namespace Uwitter
         private void button1_Click(object sender, EventArgs e)
         {
             SettingForm setting = new SettingForm();
-            setting.ShowDialog();
+            if (setting.ShowDialog() == DialogResult.OK)
+            {
+                timerCheck.Interval = Properties.Settings.Default.Interval;
+            }
         }
 
         private void timerCheck_Tick(object sender, EventArgs e)

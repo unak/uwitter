@@ -157,6 +157,10 @@ namespace Uwitter
         private string HttpGet(string url, SortedDictionary<string, string> parameters)
         {
             var req = WebRequest.Create(url + '?' + JoinParameters(parameters));
+            if (Properties.Settings.Default.UseProxy)
+            {
+                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
+            }
             ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
 
             string body;
