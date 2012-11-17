@@ -45,7 +45,8 @@
             // 
             // btnSetting
             // 
-            this.btnSetting.Location = new System.Drawing.Point(202, -1);
+            this.btnSetting.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSetting.Location = new System.Drawing.Point(191, 12);
             this.btnSetting.Name = "btnSetting";
             this.btnSetting.Size = new System.Drawing.Size(81, 23);
             this.btnSetting.TabIndex = 0;
@@ -87,11 +88,11 @@
             // 
             this.editTweet.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.editTweet.Location = new System.Drawing.Point(0, 31);
+            this.editTweet.Location = new System.Drawing.Point(0, 41);
             this.editTweet.MaxLength = 140;
             this.editTweet.Multiline = true;
             this.editTweet.Name = "editTweet";
-            this.editTweet.Size = new System.Drawing.Size(282, 79);
+            this.editTweet.Size = new System.Drawing.Size(282, 63);
             this.editTweet.TabIndex = 2;
             this.editTweet.WordWrap = false;
             // 

@@ -179,9 +179,13 @@ namespace Uwitter
             return true;
         }
 
-        private string HttpGet(string url, SortedDictionary<string, string> parameters)
+        public static string HttpGet(string url, SortedDictionary<string, string> parameters)
         {
-            var req = WebRequest.Create(url + '?' + JoinParameters(parameters));
+            if (parameters != null && parameters.Count > 0)
+            {
+                url += '?' + JoinParameters(parameters);
+            }
+            var req = WebRequest.Create(url);
             if (Properties.Settings.Default.UseProxy)
             {
                 req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
@@ -205,7 +209,45 @@ namespace Uwitter
             return body;
         }
 
-        private string HttpPost(string url, SortedDictionary<string, string> parameters)
+        public static byte[] HttpGetBinary(string url, SortedDictionary<string, string> parameters)
+        {
+            if (parameters != null && parameters.Count > 0)
+            {
+                url += '?' + JoinParameters(parameters);
+            }
+            var req = WebRequest.Create(url);
+            if (Properties.Settings.Default.UseProxy)
+            {
+                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
+            }
+            ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
+
+            byte[] body = new byte[0];
+            try
+            {
+                var res = req.GetResponse();
+                var stream = res.GetResponseStream();
+                var reader = new System.IO.BinaryReader(stream);
+                var buf = new byte[4096];
+                int read;
+                while ((read = reader.Read(buf, 0, buf.Length)) > 0)
+                {
+                    Array.Resize(ref buf, read);
+                    Array.Resize(ref body, body.Length + read);
+                    buf.CopyTo(body, body.Length - read);
+                }
+                reader.Close();
+                stream.Close();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Write(ex);
+                return null;
+            }
+            return body;
+        }
+
+        public static string HttpPost(string url, SortedDictionary<string, string> parameters)
         {
             var req = WebRequest.Create(url);
             if (Properties.Settings.Default.UseProxy)
@@ -269,7 +311,7 @@ namespace Uwitter
             return Convert.ToBase64String(digest.ComputeHash(Encoding.ASCII.GetBytes(sigBase)));
         }
 
-        private string JoinParameters(IDictionary<string, string> parameters)
+        private static string JoinParameters(IDictionary<string, string> parameters)
         {
             var buf = new StringBuilder();
             foreach (var parameter in parameters)
