@@ -27,6 +27,14 @@ namespace Uwitter
         string screenName;
         Random rand;
 
+        public bool IsActive
+        {
+            get
+            {
+                return string.IsNullOrEmpty(accessTokenSecret);
+            }
+        }
+
         public Twitter(string key, string secret)
         {
             initialize(key, secret);

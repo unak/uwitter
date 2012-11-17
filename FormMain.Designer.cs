@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.btnSetting = new System.Windows.Forms.Button();
             this.timerCheck = new System.Windows.Forms.Timer(this.components);
@@ -39,7 +38,6 @@
             // 
             // notifyIcon
             // 
-            this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
             this.notifyIcon.Text = "Uwitter";
             this.notifyIcon.Visible = true;
             this.notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseClick);
@@ -52,7 +50,7 @@
             this.btnSetting.TabIndex = 0;
             this.btnSetting.Text = "設定(仮配置)";
             this.btnSetting.UseVisualStyleBackColor = true;
-            this.btnSetting.Click += new System.EventHandler(this.button1_Click);
+            this.btnSetting.Click += new System.EventHandler(this.btnSetting_Click);
             // 
             // timerCheck
             // 

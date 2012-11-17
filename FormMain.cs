@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Drawing;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -28,6 +31,8 @@ namespace Uwitter
                 this.Text = "(未認証) - " + Application.ProductName;
                 auth = null;
             }
+
+            SetNotifyIcon();
         }
 
         private void FormMain_Shown(object sender, EventArgs e)
@@ -71,12 +76,27 @@ namespace Uwitter
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void btnSetting_Click(object sender, EventArgs e)
         {
             SettingForm setting = new SettingForm();
             if (setting.ShowDialog() == DialogResult.OK)
             {
                 timerCheck.Interval = Properties.Settings.Default.Interval;
+
+                if (string.IsNullOrEmpty(Properties.Settings.Default.AccessTokenSecret))
+                {
+                    timerCheck.Stop();
+                    this.Text = "(未認証) - " + Application.ProductName;
+                    auth = null;
+                    SetNotifyIcon();
+                }
+                else
+                {
+                    this.Text = Properties.Settings.Default.ScreenName + " - " + Application.ProductName;
+                    auth = new Twitter(OAuthKey.CONSUMER_KEY, OAuthKey.CONSUMER_SECRET, Properties.Settings.Default.AccessToken, Properties.Settings.Default.AccessTokenSecret);
+                    SetNotifyIcon();
+                    timerCheck_Tick(null, null);
+                }
             }
         }
 
@@ -92,6 +112,7 @@ namespace Uwitter
             var timelines = auth.GetTimeline(since_id);
             if (timelines != null)
             {
+                SetNotifyIcon();
                 for (int i = 0; i < timelines.Length; ++i)
                 {
                     var timeline = timelines[timelines.Length - i - 1];
@@ -109,6 +130,10 @@ namespace Uwitter
                     notifyIcon.ShowBalloonTip(15 * 1000, timelines[0].user.name + " @" + timelines[0].user.screen_name, timelines[0].text, ToolTipIcon.None);
                 }
             }
+            else
+            {
+                SetNotifyIcon(true);
+            }
 
             timerCheck.Start();
         }
@@ -116,6 +141,24 @@ namespace Uwitter
         private void listTimeline_ClientSizeChanged(object sender, EventArgs e)
         {
             colText.Width = listTimeline.ClientSize.Width;
+        }
+
+        private void SetNotifyIcon(bool error = false)
+        {
+            if (error)
+            {
+                // XXX:FIXME!!! エラーっぽいアイコン
+                notifyIcon.Icon = Properties.Resources.notify;
+            }
+            else if (auth == null || !auth.IsActive)
+            {
+                // XXX:FIXME!!! アクティブじゃないっぽいアイコン
+                notifyIcon.Icon = Properties.Resources.notify;
+            }
+            else
+            {
+                notifyIcon.Icon = Properties.Resources.notify;
+            }
         }
     }
 }
