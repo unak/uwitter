@@ -181,7 +181,6 @@ namespace Uwitter
             var curTLs = twitter.GetTimeline(since_id);
             if (curTLs != null)
             {
-                SetNotifyIcon();
                 lock (timelines)
                 {
                     if (hasRead)
@@ -292,6 +291,7 @@ namespace Uwitter
                     hover = hover.Parent;
                 }
 
+                SetNotifyIcon();
                 if (curTLs.Length > 0 && !this.Visible)
                 {
                     var buf = new StringBuilder();
@@ -375,6 +375,26 @@ namespace Uwitter
 
         private void SetNotifyIcon(bool error = false)
         {
+            lock (timelines)
+            {
+                int num = 0;
+                foreach (var timeline in timelines)
+                {
+                    if (timeline.Unread)
+                    {
+                        ++num;
+                    }
+                }
+                if (num > 0)
+                {
+                    notifyIcon.Text = string.Format("{0} (未読:{1})", Application.ProductName, num);
+                }
+                else
+                {
+                    notifyIcon.Text = Application.ProductName;
+                }
+            }
+
             if (error)
             {
                 // XXX:FIXME!!! エラーっぽいアイコン
