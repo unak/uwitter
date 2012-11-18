@@ -8,12 +8,16 @@ table {
   margin-top: 0;
 }
 
-tr.hover {
-  background-color: #f0f0f0;
+tr.unread {
+  background-color: #ffffe0;
 }
 
 tr.replied {
-  background-color: #f0f0ff;
+  background-color: #e0e0ff;
+}
+
+tr.hover {
+  background-color: #f0f0f0;
 }
 
 td {

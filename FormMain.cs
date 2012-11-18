@@ -19,10 +19,13 @@ namespace Uwitter
         decimal? in_reply_to_id;
         string in_reply_to_name;
         List<Timeline> timelines;
+        bool hasRead;
 
         public FormMain()
         {
             InitializeComponent();
+
+            this.MouseMove += new MouseEventHandler(FormMain_MouseMove);
 
             since_id = null;
             if (!string.IsNullOrEmpty(Properties.Settings.Default.AccessToken) &&
@@ -49,6 +52,7 @@ namespace Uwitter
             in_reply_to_id = null;
             in_reply_to_name = null;
             timelines = new List<Timeline>();
+            hasRead = false;
 
             webMain.Visible = false;    // 音を消すため
             webMain.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
@@ -82,8 +86,15 @@ namespace Uwitter
             }
         }
 
+        void FormMain_MouseMove(object sender, MouseEventArgs e)
+        {
+            hasRead = true;
+        }
+
         private void FormMain_KeyPress(object sender, KeyPressEventArgs e)
         {
+            hasRead = true;
+
             if (e.KeyChar == 0x0D && this.ActiveControl == editTweet)
             {
                 if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
@@ -101,7 +112,7 @@ namespace Uwitter
                         in_reply_to_id = null;
                         in_reply_to_name = null;
                         editTweet.Clear();
-                        timerCheck.Interval = 5 * 1000; // 数秒待たないとツイートが反映されない
+                        timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
                         timerCheck.Start();
                     }
                 }
@@ -171,81 +182,100 @@ namespace Uwitter
             if (curTLs != null)
             {
                 SetNotifyIcon();
-                for (int i = 0; i < curTLs.Length; ++i)
+                lock (timelines)
                 {
-                    var timeline = curTLs[curTLs.Length - i - 1];
-                    timelines.Insert(0, timeline);
-                    if (since_id == null || timeline.id > since_id)
+                    if (hasRead)
                     {
-                        since_id = timeline.id;
+                        hasRead = false;
+                        foreach (var timeline in timelines)
+                        {
+                            timeline.Unread = false;
+                        }
                     }
-                }
 
-                var html = new StringBuilder();
-                html.Append(@"<table id=""tweets"">");
-                // foreachでいいような気がするが、RT時に置き換えをやるので敢えてforで回す
-                for (int i = 0; i < timelines.Count; ++i)
-                {
-                    var timeline = timelines[i];
-                    TwitterUser rt_user = null;
-                    if (timeline.retweeted_status != null)
+                    for (int i = 0; i < curTLs.Length; ++i)
                     {
-                        rt_user = timeline.user;
-                        timeline = timeline.retweeted_status;
-                    }
-                    string className = "tweet";
-                    if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
-                    {
-                        className += " replied";
-                    }
-                    html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@"""><img src=""");
-                    html.Append(timeline.user.profile_image_url);
-                    html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@""">");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.name));
-                    html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@""">@");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@"</a><br/>");
-                    var text = WebUtility.HtmlEncode(timeline.text);
-                    if (timeline.entities != null && timeline.entities.urls != null)
-                    {
-                        foreach (var url in timeline.entities.urls)
+                        var timeline = curTLs[curTLs.Length - i - 1];
+                        timeline.Unread = true;
+                        timelines.Insert(0, timeline);
+                        if (since_id == null || timeline.id > since_id)
                         {
-                            text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                            since_id = timeline.id;
                         }
                     }
-                    if (timeline.entities != null && timeline.entities.media != null)
+
+                    var html = new StringBuilder();
+                    html.Append(@"<table id=""tweets"">");
+
+                    // foreachでいいような気がするが、RT時に置き換えをやるので敢えてforで回す
+                    for (int i = 0; i < timelines.Count; ++i)
                     {
-                        foreach (var media in timeline.entities.media)
+                        var timeline = timelines[i];
+                        TwitterUser rt_user = null;
+                        if (timeline.retweeted_status != null)
                         {
-                            text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
+                            rt_user = timeline.user;
+                            timeline.retweeted_status.Unread = timeline.Unread;
+                            timeline = timeline.retweeted_status;
                         }
+                        string className = "tweet";
+                        if (timeline.Unread)
+                        {
+                            className += " unread";
+                        }
+                        if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
+                        {
+                            className += " replied";
+                        }
+                        html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
+                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                        html.Append(@"""><img src=""");
+                        html.Append(timeline.user.profile_image_url);
+                        html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
+                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                        html.Append(@""">");
+                        html.Append(WebUtility.HtmlEncode(timeline.user.name));
+                        html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
+                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                        html.Append(@""">@");
+                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                        html.Append(@"</a><br/>");
+                        var text = WebUtility.HtmlEncode(timeline.text);
+                        if (timeline.entities != null && timeline.entities.urls != null)
+                        {
+                            foreach (var url in timeline.entities.urls)
+                            {
+                                text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                            }
+                        }
+                        if (timeline.entities != null && timeline.entities.media != null)
+                        {
+                            foreach (var media in timeline.entities.media)
+                            {
+                                text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
+                            }
+                        }
+                        // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
+                        text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
+                        html.Append(text);
+                        html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
+                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                        html.Append(@"/statuses/");
+                        html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
+                        html.Append(@""">");
+                        html.Append(WebUtility.HtmlEncode(timeline.created_at));
+                        html.Append(@"</a> <span class=""source"">");
+                        html.Append(timeline.source);
+                        html.Append(@"で</span>");
+                        if (rt_user != null)
+                        {
+                            html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
+                        }
+                        html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
                     }
-                    // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
-                    text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
-                    html.Append(text);
-                    html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@"/statuses/");
-                    html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
-                    html.Append(@""">");
-                    html.Append(WebUtility.HtmlEncode(timeline.created_at));
-                    html.Append(@"</a> <span class=""source"">");
-                    html.Append(timeline.source);
-                    html.Append(@"で</span>");
-                    if (rt_user != null)
-                    {
-                        html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
-                    }
-                    html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
+                    html.Append(@"</table>");
+                    webMain.Document.Body.InnerHtml = html.ToString();
                 }
-                html.Append(@"</table>");
-                webMain.Document.Body.InnerHtml = html.ToString();
 
                 // 上の処理が走るたび、trに対するhoverが解除されるので、今のカーソル位置にhoverを設定しなおす
                 var hover = webMain.Document.GetElementFromPoint(webMain.PointToClient(Cursor.Position));
@@ -287,6 +317,8 @@ namespace Uwitter
 
         private void webMain_DocumentClick(object sender, HtmlElementEventArgs e)
         {
+            hasRead = true;
+
             var clicked = webMain.Document.GetElementFromPoint(e.MousePosition);
             while (clicked != null)
             {
@@ -317,7 +349,7 @@ namespace Uwitter
                         if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
                         {
                             editTweet.Clear();
-                            timerCheck.Interval = 5 * 1000; // 数秒待たないとツイートが反映されない
+                            timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
                             timerCheck.Start();
                         }
                     }
@@ -332,6 +364,8 @@ namespace Uwitter
 
         private void webMain_KeyDown(object sender, HtmlElementEventArgs e)
         {
+            hasRead = true;
+
             if (e.KeyPressedCode == 0x09)
             {
                 this.SelectNextControl(webMain, true, true, true, true);

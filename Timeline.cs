@@ -51,6 +51,8 @@ namespace Uwitter
         public string in_reply_to_screen_name { get; set; }
         [DataMember]
         public decimal? in_reply_to_status_id { get; set; }
+
+        public bool Unread { get; set; }
     }
 
     [DataContract]
