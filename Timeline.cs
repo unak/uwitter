@@ -71,6 +71,8 @@ namespace Uwitter
         //public string[] hashtags { get; set; }
         [DataMember]
         public Mention[] user_mentions { get; set; }
+        [DataMember]
+        public Media[] media { get; set; }
     }
 
     [DataContract]
@@ -99,6 +101,31 @@ namespace Uwitter
         public Int64[] indices { get; set; }
         [DataMember]
         public string screen_name { get; set; }
+    }
+
+    [DataContract]
+    class Media
+    {
+        [DataMember]
+        public decimal id { get; set; }
+        [DataMember]
+        public string id_str { get; set; }
+        [DataMember]
+        public Int64[] indices { get; set; }
+        [DataMember]
+        public string expanded_url { get; set; }
+        [DataMember]
+        public string url { get; set; }
+        [DataMember]
+        public string display_url { get; set; }
+        //[DataMember]
+        //public string media_url { get; set; }
+        //[DataMember]
+        //public string media_url_https { get; set; }
+        [DataMember]
+        public string type { get; set; }
+        //[DataMember]
+        //public PhotoSizes sizes { get; set; }
     }
 
     [DataContract]

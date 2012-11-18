@@ -175,7 +175,7 @@ namespace Uwitter
                 {
                     var timeline = curTLs[curTLs.Length - i - 1];
                     timelines.Insert(0, timeline);
-                    if (timeline.id > since_id)
+                    if (since_id == null || timeline.id > since_id)
                     {
                         since_id = timeline.id;
                     }
@@ -212,9 +212,19 @@ namespace Uwitter
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"</a><br/>");
                     var text = WebUtility.HtmlEncode(timeline.text);
-                    foreach (var url in timeline.entities.urls)
+                    if (timeline.entities != null && timeline.entities.urls != null)
                     {
-                        text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                        foreach (var url in timeline.entities.urls)
+                        {
+                            text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                        }
+                    }
+                    if (timeline.entities != null && timeline.entities.media != null)
+                    {
+                        foreach (var media in timeline.entities.media)
+                        {
+                            text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
+                        }
                     }
                     // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
                     text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
