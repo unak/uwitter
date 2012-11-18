@@ -98,7 +98,11 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="notify.ico" />
+    <None Include="Resources\notify.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\twitter.css" />
+    <Content Include="Resources\twitter.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

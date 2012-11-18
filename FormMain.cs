@@ -44,6 +44,9 @@ namespace Uwitter
 
             timelines = new List<Timeline>();
 
+            webMain.Visible = false;    // 音を消すため
+            webMain.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
+
             SetNotifyIcon();
         }
 
@@ -154,26 +157,35 @@ namespace Uwitter
                 }
 
                 var html = new StringBuilder();
-                html.Append("<html><body><table>");
+                html.Append(@"<table id=""tweets"">");
                 foreach (var timeline in timelines)
                 {
-                    html.Append("<tr><td><img src=\"");
-                    html.Append(timeline.user.profile_image_url);
-                    html.Append("\"/></td><td>");
-                    html.Append("<b>");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.name));
-                    html.Append("</b> @");
+                    html.Append(@"<tr class=""tweet"" onmouseover=""this.className='hover';"" onmouseout=""this.className='tweet';""><td><a href=""https://twitter.com/");
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append("<br/>");
+                    html.Append(@"""><img src=""");
+                    html.Append(timeline.user.profile_image_url);
+                    html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@""">");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.name));
+                    html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@""">@");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@"</a><br/>");
                     html.Append(WebUtility.HtmlEncode(timeline.text));
-                    html.Append("<br/>");
+                    html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@"/statuses/");
+                    html.Append(WebUtility.HtmlEncode(timeline.id_str));
+                    html.Append(@""">");
                     html.Append(WebUtility.HtmlEncode(timeline.created_at));
-                    html.Append(" ");
+                    html.Append(@"</a> <span class=""source"">");
                     html.Append(timeline.source);
-                    html.Append("で</td></tr>");
+                    html.Append(@"で</span></td></tr>");
                 }
-                html.Append("</table></body></html>");
-                webMain.DocumentText = html.ToString();
+                html.Append(@"</table>");
+                webMain.Document.Body.InnerHtml = html.ToString();
 
                 if (curTLs.Length > 0 && !this.Visible)
                 {
@@ -193,6 +205,7 @@ namespace Uwitter
 
         private void webMain_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
+            webMain.Visible = true; // 音を消すために非表示にしてあったので戻す
             webMain.Document.Click += new HtmlElementEventHandler(webMain_DocumentClick);
             webMain.Document.Body.KeyDown += new HtmlElementEventHandler(webMain_KeyDown);
         }

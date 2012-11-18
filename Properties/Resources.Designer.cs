@@ -60,6 +60,74 @@ namespace Uwitter.Properties {
             }
         }
         
+        /// <summary>
+        ///   table {
+        ///  font-family: sans-serif;
+        ///  font-size: 9.5pt;
+        ///  line-height: 1.4;
+        ///  border-collapse: collapse;
+        ///  border-spacing: 0;
+        ///  padding-top: 0;
+        ///  margin-top: 0;
+        ///}
+        ///
+        ///tr.hover {
+        ///  background-color: #c0c0c0;
+        ///}
+        ///
+        ///td {
+        ///  border-bottom: 1px #606060 solid;
+        ///  vertical-align: top;
+        ///  padding: 4px 0px 4px 0px;
+        ///}
+        ///
+        ///a img {
+        ///  border: none;
+        ///  width: 24px;
+        ///  height: 24px;
+        ///  margin-right: 4px;
+        ///}
+        ///
+        ///a {
+        ///  text-decoration: none;
+        ///}
+        ///a:hover {
+        ///  text-decoration: underline;
+        ///}
+        ///
+        ///.name {
+        ///  font-weight:  [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string css {
+            get {
+                return ResourceManager.GetString("css", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   
+        ///window.onload = function() {
+        ///  if (document.getElementsByTagName) {
+        ///    var className = &apos;hover&apos;;
+        ///    var t = document.getElementById(&quot;Table&quot;);
+        ///    var rows = t.getElementsByTagName(&quot;tr&quot;);
+        ///    for (var i = 0; i &lt;rows.length; i++) {
+        ///      if (rows[i].className) {
+        ///        rows[i].BaseName = rows[i].className;
+        ///        rows[i].onmouseover = function(){this.className = className;}
+        ///        rows[i].onmouseout = function(){this.className = this.BaseName;}
+        ///      }
+        ///	}
+        ///  }
+        ///}
+        /// に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string js {
+            get {
+                return ResourceManager.GetString("js", resourceCulture);
+            }
+        }
+        
         internal static System.Drawing.Icon notify {
             get {
                 object obj = ResourceManager.GetObject("notify", resourceCulture);
