@@ -209,17 +209,9 @@ namespace Uwitter
             {
                 url += '?' + JoinParameters(parameters);
             }
-            var req = WebRequest.Create(url);
-            if (Properties.Settings.Default.UseProxy)
+            return HttpRequest<string>(url, null, (res) =>
             {
-                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
-            }
-            ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
-
-            string body;
-            try
-            {
-                var res = req.GetResponse();
+                string body;
                 using (var stream = res.GetResponseStream())
                 {
                     using (var reader = new StreamReader(stream))
@@ -227,27 +219,8 @@ namespace Uwitter
                         body = reader.ReadToEnd();
                     }
                 }
-            }
-            catch (WebException ex)
-            {
-                if (ex.Status == WebExceptionStatus.ProtocolError)
-                {
-                    using (var stream = ex.Response.GetResponseStream())
-                    {
-                        using (var reader = new StreamReader(stream))
-                        {
-                            var result = reader.ReadToEnd();
-                            MessageBox.Show(result, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-                return null;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-            return body;
+                return body;
+            });
         }
 
         public static byte[] HttpGetBinary(string url, SortedDictionary<string, string> parameters)
@@ -256,17 +229,9 @@ namespace Uwitter
             {
                 url += '?' + JoinParameters(parameters);
             }
-            var req = WebRequest.Create(url);
-            if (Properties.Settings.Default.UseProxy)
+            return HttpRequest<byte[]>(url, null, (res) =>
             {
-                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
-            }
-            ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
-
-            byte[] body = new byte[0];
-            try
-            {
-                var res = req.GetResponse();
+                byte[] body = new byte[0];
                 using (var stream = res.GetResponseStream())
                 {
                     using (var reader = new System.IO.BinaryReader(stream))
@@ -281,37 +246,15 @@ namespace Uwitter
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.Write(ex);
-                return null;
-            }
-            return body;
+                return body;
+            });
         }
 
         public static string HttpPost(string url, SortedDictionary<string, string> parameters)
         {
-            var req = WebRequest.Create(url);
-            if (Properties.Settings.Default.UseProxy)
+            return HttpRequest<string>(url, parameters, (res) =>
             {
-                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
-            }
-            ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
-            var data = Encoding.ASCII.GetBytes(JoinParameters(parameters));
-            req.Method = "POST";
-            req.ContentType = "application/x-www-form-urlencoded";
-            req.ContentLength = data.Length;
-
-            string body;
-            try
-            {
-                using (var stream = req.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-                }
-
-                var res = req.GetResponse();
+                string body;
                 using (var stream = res.GetResponseStream())
                 {
                     using (var reader = new StreamReader(stream))
@@ -319,12 +262,59 @@ namespace Uwitter
                         body = reader.ReadToEnd();
                     }
                 }
+                return body;
+            });
+        }
+
+        private delegate T HttpRequestCallback<T>(WebResponse res);
+        private static T HttpRequest<T>(string url, SortedDictionary<string, string> parameters, HttpRequestCallback<T> callback)
+        {
+            var req = WebRequest.Create(url);
+            if (Properties.Settings.Default.UseProxy)
+            {
+                req.Proxy = new WebProxy(Properties.Settings.Default.ProxyHost, Properties.Settings.Default.ProxyPort);
+            }
+            ((HttpWebRequest)req).UserAgent = Application.ProductName + ' ' + Application.ProductVersion;
+            byte[] data = null;
+            if (parameters != null)
+            {
+                data = Encoding.ASCII.GetBytes(JoinParameters(parameters));
+                req.Method = "POST";
+                req.ContentType = "application/x-www-form-urlencoded";
+                req.ContentLength = data.Length;
+            }
+
+            try
+            {
+                if (data != null)
+                {
+                    using (var stream = req.GetRequestStream())
+                    {
+                        stream.Write(data, 0, data.Length);
+                    }
+                }
+                return callback(req.GetResponse());
+            }
+            catch (WebException ex)
+            {
+                if (ex.Status == WebExceptionStatus.ProtocolError)
+                {
+                    using (var stream = ex.Response.GetResponseStream())
+                    {
+                        using (var reader = new StreamReader(stream))
+                        {
+                            var result = reader.ReadToEnd();
+                            // XXX:FIXME!!! 毎回メッセージボックスはウザイので別の方法が必要
+                            MessageBox.Show(ex.Message + "\n" + result, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+                return default(T);
             }
             catch (Exception)
             {
-                return null;
+                return default(T);
             }
-            return body;
         }
 
         private SortedDictionary<string, string> SetupInitialParameters()
