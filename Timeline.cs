@@ -28,7 +28,7 @@ namespace Uwitter
         //[DataMember]
         //public string[] contributors { get; set; }
         [DataMember]
-        public Int64 id { get; set; }
+        public decimal id { get; set; }
         [DataMember]
         public int retweet_count { get; set; }
         [DataMember]
@@ -37,6 +37,8 @@ namespace Uwitter
         //public string geo { get; set; }
         [DataMember]
         public bool retweeted { get; set; }
+        [DataMember]
+        public Timeline retweeted_status { get; set; }
         [DataMember]
         public Int64? in_reply_to_user_id { get; set; }
         //[DataMember]
@@ -173,7 +175,7 @@ namespace Uwitter
         //[DataMember]
         //public int friends_count { get; set; }
         [DataMember]
-        public bool following { get; set; }
+        public bool? following { get; set; }
         //[DataMember]
         //public bool show_all_inline_media { get; set; }
         [DataMember]

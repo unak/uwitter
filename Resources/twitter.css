@@ -18,6 +18,20 @@ td {
   padding: 4px 0px 4px 0px;
 }
 
+td.re {
+  text-align: right;
+  padding: 8px 2px 0px 2px;
+  width: 2.2em;
+}
+
+tr.tweet td.re a {
+  display: none;
+}
+
+tr.hover td.re a {
+  display: inline;
+}
+
 a img {
   border: none;
   width: 24px;
@@ -36,7 +50,7 @@ a:hover {
   font-weight: bold;
 }
 
-.screen_name, .created_at, .source, .source a {
+.screen_name, .created_at, .source, .source a, .retweeted {
   font-size: 8pt;
   color: #606060;
 }

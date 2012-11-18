@@ -15,7 +15,7 @@ namespace Uwitter
         const int ICON_SIZE = 24;
 
         Twitter twitter;
-        string since_id;
+        decimal? since_id;
         List<Timeline> timelines;
 
         public FormMain()
@@ -160,16 +160,24 @@ namespace Uwitter
                 {
                     var timeline = curTLs[curTLs.Length - i - 1];
                     timelines.Insert(0, timeline);
-                    if (Convert.ToDecimal(timeline.id_str) > Convert.ToDecimal(since_id))
+                    if (timeline.id > since_id)
                     {
-                        since_id = timeline.id_str;
+                        since_id = timeline.id;
                     }
                 }
 
                 var html = new StringBuilder();
                 html.Append(@"<table id=""tweets"">");
-                foreach (var timeline in timelines)
+                // foreachでいいような気がするが、RT時に置き換えをやるので敢えてforで回す
+                for (int i = 0; i < timelines.Count; ++i)
                 {
+                    var timeline = timelines[i];
+                    TwitterUser rt_user = null;
+                    if (timeline.retweeted_status != null)
+                    {
+                        rt_user = timeline.user;
+                        timeline = timeline.retweeted_status;
+                    }
                     html.Append(@"<tr class=""tweet"" onmouseover=""this.className='hover';"" onmouseout=""this.className='tweet';""><td><a href=""https://twitter.com/");
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"""><img src=""");
@@ -194,12 +202,17 @@ namespace Uwitter
                     html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"/statuses/");
-                    html.Append(WebUtility.HtmlEncode(timeline.id_str));
+                    html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
                     html.Append(@""">");
                     html.Append(WebUtility.HtmlEncode(timeline.created_at));
                     html.Append(@"</a> <span class=""source"">");
                     html.Append(timeline.source);
-                    html.Append(@"で</span></td></tr>");
+                    html.Append(@"で</span>");
+                    if (rt_user != null)
+                    {
+                        html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
+                    }
+                    html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString()));
                 }
                 html.Append(@"</table>");
                 webMain.Document.Body.InnerHtml = html.ToString();
@@ -256,8 +269,26 @@ namespace Uwitter
 
             if (clicked != null)
             {
+                var className = clicked.GetAttribute("className");
                 var href = clicked.GetAttribute("href");
-                if (!string.IsNullOrEmpty(href))
+                if (className.Equals("reply"))
+                {
+                    // XXX:FIXME!!! 今は何もしないよ
+                }
+                else if (className.Equals("retweet"))
+                {
+                    if (twitter != null && twitter.IsActive && 
+                        MessageBox.Show("リツイートしますか?", Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
+                        {
+                            editTweet.Clear();
+                            timerCheck.Interval = 5 * 1000; // 数秒待たないとツイートが反映されない
+                            timerCheck.Start();
+                        }
+                    }
+                }
+                else if (!string.IsNullOrEmpty(href))
                 {
                     Process.Start(href);
                 }

@@ -12,11 +12,12 @@ namespace Uwitter
 {
     class Twitter
     {
-        const string REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
-        const string AUTHORIZE_URL = "https://api.twitter.com/oauth/authorize";
-        const string ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
-        const string HOME_TIMELINE_URL = "https://api.twitter.com/1.1/statuses/home_timeline.json";
-        const string UPDATE_STATUS_URL = "https://api.twitter.com/1.1/statuses/update.json";
+        const string REQUEST_TOKEN_URL = @"https://api.twitter.com/oauth/request_token";
+        const string AUTHORIZE_URL = @"https://api.twitter.com/oauth/authorize";
+        const string ACCESS_TOKEN_URL = @"https://api.twitter.com/oauth/access_token";
+        const string HOME_TIMELINE_URL = @"https://api.twitter.com/1.1/statuses/home_timeline.json";
+        const string UPDATE_STATUS_URL = @"https://api.twitter.com/1.1/statuses/update.json";
+        const string RETWEET_URL = @"https://api.twitter.com/1.1/statuses/retweet/{0}.json";
 
         string consumerKey;
         string consumerSecret;
@@ -138,12 +139,12 @@ namespace Uwitter
             return screenName;
         }
 
-        public Timeline[] GetTimeline(string since_id = null)
+        public Timeline[] GetTimeline(decimal? since_id = null)
         {
             var parameters = SetupInitialParameters();
-            if (!string.IsNullOrEmpty(since_id))
+            if (since_id != null)
             {
-                parameters.Add("since_id", since_id);
+                parameters.Add("since_id", since_id.ToString());
             }
             parameters.Add("count", "10");
             parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
@@ -173,6 +174,23 @@ namespace Uwitter
             parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("POST", UPDATE_STATUS_URL, parameters, accessTokenSecret)));
 
             var body = HttpPost(UPDATE_STATUS_URL, parameters);
+            if (string.IsNullOrEmpty(body))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool Retweet(decimal id)
+        {
+            var parameters = SetupInitialParameters();
+            parameters.Add("id", Uri.EscapeDataString(id.ToString()));
+            parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+            var url = string.Format(RETWEET_URL, id.ToString());
+            parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("POST", url, parameters, accessTokenSecret)));
+
+            var body = HttpPost(url, parameters);
             if (string.IsNullOrEmpty(body))
             {
                 return false;
