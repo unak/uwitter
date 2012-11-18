@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Uwitter
@@ -46,8 +47,6 @@ namespace Uwitter
 
             webMain.Visible = false;    // 音を消すため
             webMain.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
-
-            SetNotifyIcon();
         }
 
         private void FormMain_Shown(object sender, EventArgs e)
@@ -56,6 +55,9 @@ namespace Uwitter
             {
                 timerCheck_Tick(null, null);
             }
+
+            // バルーンを消すため。このタイミングじゃないと残ることもある
+            SetNotifyIcon();
         }
 
         private void FormMain_ClientSizeChanged(object sender, EventArgs e)
@@ -135,6 +137,14 @@ namespace Uwitter
 
         private void timerCheck_Tick(object sender, EventArgs e)
         {
+            if (webMain.Document.Body == null)
+            {
+                // 出直し
+                timerCheck.Interval = 500;
+                timerCheck.Start();
+                return;
+            }
+
             timerCheck.Stop();  // 再入を避けるため、いったん止める
             if (twitter == null)
             {
@@ -173,7 +183,14 @@ namespace Uwitter
                     html.Append(@""">@");
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"</a><br/>");
-                    html.Append(WebUtility.HtmlEncode(timeline.text));
+                    var text = WebUtility.HtmlEncode(timeline.text);
+                    foreach (var url in timeline.entities.urls)
+                    {
+                        text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                    }
+                    // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
+                    text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
+                    html.Append(text);
                     html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"/statuses/");
