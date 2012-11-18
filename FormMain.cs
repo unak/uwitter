@@ -187,6 +187,21 @@ namespace Uwitter
                 html.Append(@"</table>");
                 webMain.Document.Body.InnerHtml = html.ToString();
 
+                // 上の処理が走るたび、trに対するhoverが解除されるので、今のカーソル位置にhoverを設定しなおす
+                var hover = webMain.Document.GetElementFromPoint(webMain.PointToClient(Cursor.Position));
+                while (hover != null)
+                {
+                    if (hover.TagName == "tr" || hover.TagName == "TR")
+                    {
+                        if (hover.GetAttribute("className").Equals("tweet"))
+                        {
+                            hover.SetAttribute("className", "hover");
+                        }
+                        break;
+                    }
+                    hover = hover.Parent;
+                }
+
                 if (curTLs.Length > 0 && !this.Visible)
                 {
                     var buf = new StringBuilder();

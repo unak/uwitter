@@ -67,7 +67,6 @@
             this.editTweet.Name = "editTweet";
             this.editTweet.Size = new System.Drawing.Size(282, 67);
             this.editTweet.TabIndex = 1;
-            this.editTweet.WordWrap = false;
             // 
             // webMain
             // 

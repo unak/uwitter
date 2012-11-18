@@ -22,7 +22,7 @@ a img {
   border: none;
   width: 24px;
   height: 24px;
-  margin-right: 4px;
+  margin: 0px 4px 0px 2px;
 }
 
 a {
