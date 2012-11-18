@@ -177,21 +177,25 @@ namespace Uwitter
                 return;
             }
 
+            // 未読フラグを落とす
+            if (hasRead)
+            {
+                hasRead = false;
+                lock (timelines)
+                {
+                    foreach (var timeline in timelines)
+                    {
+                        timeline.Unread = false;
+                    }
+                }
+            }
+
             // タイムライン取得
             var curTLs = twitter.GetTimeline(since_id);
             if (curTLs != null)
             {
                 lock (timelines)
                 {
-                    if (hasRead)
-                    {
-                        hasRead = false;
-                        foreach (var timeline in timelines)
-                        {
-                            timeline.Unread = false;
-                        }
-                    }
-
                     for (int i = 0; i < curTLs.Length; ++i)
                     {
                         var timeline = curTLs[curTLs.Length - i - 1];
@@ -252,6 +256,13 @@ namespace Uwitter
                             foreach (var media in timeline.entities.media)
                             {
                                 text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
+                            }
+                        }
+                        if (timeline.entities != null && timeline.entities.hashtags != null)
+                        {
+                            foreach (var hashtag in timeline.entities.hashtags)
+                            {
+                                text = Regex.Replace(text, @"#" + Regex.Escape(hashtag.text) + @"\b", string.Format(@"<a href=""https://twitter.com/search?q=%23{0}&src=hash"">#{1}</a>", Uri.EscapeDataString(hashtag.text), hashtag.text));
                             }
                         }
                         // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう

@@ -69,8 +69,8 @@ namespace Uwitter
     {
         [DataMember]
         public TwitterUrl[] urls { get; set; }
-        //[DataMember]
-        //public string[] hashtags { get; set; }
+        [DataMember]
+        public Hashtag[] hashtags { get; set; }
         [DataMember]
         public Mention[] user_mentions { get; set; }
         [DataMember]
@@ -88,6 +88,15 @@ namespace Uwitter
         public Int64[] indices { get; set; }
         [DataMember]
         public string display_url { get; set; }
+    }
+
+    [DataContract]
+    class Hashtag
+    {
+        [DataMember]
+        public string text { get; set; }
+        [DataMember]
+        public Int64[] indices { get; set; }
     }
 
     [DataContract]

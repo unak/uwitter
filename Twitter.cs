@@ -228,6 +228,21 @@ namespace Uwitter
                     }
                 }
             }
+            catch (WebException ex)
+            {
+                if (ex.Status == WebExceptionStatus.ProtocolError)
+                {
+                    using (var stream = ex.Response.GetResponseStream())
+                    {
+                        using (var reader = new StreamReader(stream))
+                        {
+                            var result = reader.ReadToEnd();
+                            MessageBox.Show(result, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+                return null;
+            }
             catch (Exception)
             {
                 return null;
