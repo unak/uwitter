@@ -311,8 +311,10 @@ namespace Uwitter
                 }
                 return default(T);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // XXX:FIXME!!! 毎回メッセージボックスはウザイので別の方法が必要
+                MessageBox.Show(ex.Message, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return default(T);
             }
         }

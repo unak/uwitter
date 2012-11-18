@@ -331,6 +331,7 @@ namespace Uwitter
             webMain.Visible = true; // 音を消すために非表示にしてあったので戻す
             webMain.Document.Click += new HtmlElementEventHandler(webMain_DocumentClick);
             webMain.Document.Body.KeyDown += new HtmlElementEventHandler(webMain_KeyDown);
+            webMain.Document.MouseMove += new HtmlElementEventHandler(webMain_MouseMove);
         }
 
         private void webMain_DocumentClick(object sender, HtmlElementEventArgs e)
@@ -389,6 +390,11 @@ namespace Uwitter
                 this.SelectNextControl(webMain, true, true, true, true);
                 e.ReturnValue = false;
             }
+        }
+
+        void webMain_MouseMove(object sender, HtmlElementEventArgs e)
+        {
+            hasRead = true;
         }
 
         private void SetNotifyIcon(bool error = false)
