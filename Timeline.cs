@@ -40,7 +40,7 @@ namespace Uwitter
         [DataMember]
         public Timeline retweeted_status { get; set; }
         [DataMember]
-        public Int64? in_reply_to_user_id { get; set; }
+        public decimal? in_reply_to_user_id { get; set; }
         //[DataMember]
         //public string place { get; set; }
         [DataMember]
@@ -50,7 +50,7 @@ namespace Uwitter
         [DataMember]
         public string in_reply_to_screen_name { get; set; }
         [DataMember]
-        public Int64? in_reply_to_status_id { get; set; }
+        public decimal? in_reply_to_status_id { get; set; }
     }
 
     [DataContract]
@@ -94,7 +94,7 @@ namespace Uwitter
         [DataMember]
         public string id_str { get; set; }
         [DataMember]
-        public Int64 id { get; set; }
+        public decimal id { get; set; }
         [DataMember]
         public Int64[] indices { get; set; }
         [DataMember]
@@ -139,7 +139,7 @@ namespace Uwitter
         //[DataMember]
         //public string profile_image_url_https { get; set; }
         [DataMember]
-        public Int64 id { get; set; }
+        public decimal id { get; set; }
         //[DataMember]
         //public int listed_count { get; set; }
         //[DataMember]

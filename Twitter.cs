@@ -166,10 +166,14 @@ namespace Uwitter
             return obj;
         }
 
-        public bool SendTweet(string tweet)
+        public bool SendTweet(string tweet, decimal? in_reply_to = null)
         {
             var parameters = SetupInitialParameters();
             parameters.Add("status", Uri.EscapeDataString(tweet));
+            if (in_reply_to != null)
+            {
+                parameters.Add("in_reply_to_status_id", in_reply_to.ToString());
+            }
             parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
             parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("POST", UPDATE_STATUS_URL, parameters, accessTokenSecret)));
 

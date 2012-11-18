@@ -16,6 +16,8 @@ namespace Uwitter
 
         Twitter twitter;
         decimal? since_id;
+        decimal? in_reply_to_id;
+        string in_reply_to_name;
         List<Timeline> timelines;
 
         public FormMain()
@@ -43,6 +45,9 @@ namespace Uwitter
                 this.DesktopBounds = new Rectangle(Properties.Settings.Default.X, Properties.Settings.Default.Y, Properties.Settings.Default.Width, Properties.Settings.Default.Height);
             }
 
+            since_id = null;
+            in_reply_to_id = null;
+            in_reply_to_name = null;
             timelines = new List<Timeline>();
 
             webMain.Visible = false;    // 音を消すため
@@ -83,8 +88,18 @@ namespace Uwitter
             {
                 if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
                 {
-                    if (twitter.SendTweet(editTweet.Text))
+                    if (in_reply_to_id != null)
                     {
+                        if (!Regex.IsMatch(editTweet.Text, string.Format(@"^@{0}\b", in_reply_to_name)))
+                        {
+                            in_reply_to_id = null;
+                            in_reply_to_name = null;
+                        }
+                    }
+                    if (twitter.SendTweet(editTweet.Text, in_reply_to_id))
+                    {
+                        in_reply_to_id = null;
+                        in_reply_to_name = null;
                         editTweet.Clear();
                         timerCheck.Interval = 5 * 1000; // 数秒待たないとツイートが反映されない
                         timerCheck.Start();
@@ -178,7 +193,12 @@ namespace Uwitter
                         rt_user = timeline.user;
                         timeline = timeline.retweeted_status;
                     }
-                    html.Append(@"<tr class=""tweet"" onmouseover=""this.className='hover';"" onmouseout=""this.className='tweet';""><td><a href=""https://twitter.com/");
+                    string className = "tweet";
+                    if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
+                    {
+                        className += " replied";
+                    }
+                    html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"""><img src=""");
                     html.Append(timeline.user.profile_image_url);
@@ -212,7 +232,7 @@ namespace Uwitter
                     {
                         html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
                     }
-                    html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString()));
+                    html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
                 }
                 html.Append(@"</table>");
                 webMain.Document.Body.InnerHtml = html.ToString();
@@ -273,7 +293,11 @@ namespace Uwitter
                 var href = clicked.GetAttribute("href");
                 if (className.Equals("reply"))
                 {
-                    // XXX:FIXME!!! 今は何もしないよ
+                    in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
+                    in_reply_to_name = Regex.Replace(href, ".*/", "");
+                    editTweet.Text = string.Format(@"@{0} ", in_reply_to_name);
+                    this.ActiveControl = editTweet;
+                    editTweet.Select(editTweet.Text.Length, 0);
                 }
                 else if (className.Equals("retweet"))
                 {
