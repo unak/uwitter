@@ -206,102 +206,109 @@ namespace Uwitter
                             since_id = timeline.id;
                         }
                     }
-
-                    var html = new StringBuilder();
-                    html.Append(@"<table id=""tweets"">");
-
-                    // foreachでいいような気がするが、RT時に置き換えをやるので敢えてforで回す
-                    for (int i = 0; i < timelines.Count; ++i)
-                    {
-                        var timeline = timelines[i];
-                        TwitterUser rt_user = null;
-                        if (timeline.retweeted_status != null)
-                        {
-                            rt_user = timeline.user;
-                            timeline.retweeted_status.Unread = timeline.Unread;
-                            timeline = timeline.retweeted_status;
-                        }
-                        string className = "tweet";
-                        if (timeline.Unread)
-                        {
-                            className += " unread";
-                        }
-                        if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
-                        {
-                            className += " replied";
-                        }
-                        html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
-                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                        html.Append(@"""><img src=""");
-                        html.Append(timeline.user.profile_image_url);
-                        html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
-                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                        html.Append(@""">");
-                        html.Append(WebUtility.HtmlEncode(timeline.user.name));
-                        html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
-                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                        html.Append(@""">@");
-                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                        html.Append(@"</a><br/>");
-                        var text = WebUtility.HtmlEncode(timeline.text);
-                        if (timeline.entities != null && timeline.entities.urls != null)
-                        {
-                            foreach (var url in timeline.entities.urls)
-                            {
-                                text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
-                            }
-                        }
-                        if (timeline.entities != null && timeline.entities.media != null)
-                        {
-                            foreach (var media in timeline.entities.media)
-                            {
-                                text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
-                            }
-                        }
-                        if (timeline.entities != null && timeline.entities.hashtags != null)
-                        {
-                            foreach (var hashtag in timeline.entities.hashtags)
-                            {
-                                text = Regex.Replace(text, @"#" + Regex.Escape(hashtag.text) + @"\b", string.Format(@"<a href=""https://twitter.com/search?q=%23{0}&src=hash"">#{1}</a>", Uri.EscapeDataString(hashtag.text), hashtag.text));
-                            }
-                        }
-                        // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
-                        text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
-                        html.Append(text);
-                        html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
-                        html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                        html.Append(@"/statuses/");
-                        html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
-                        html.Append(@""">");
-                        html.Append(WebUtility.HtmlEncode(timeline.created_at));
-                        html.Append(@"</a> <span class=""source"">");
-                        html.Append(timeline.source);
-                        html.Append(@"で</span>");
-                        if (rt_user != null)
-                        {
-                            html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
-                        }
-                        html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
-                    }
-                    html.Append(@"</table>");
-                    webMain.Document.Body.InnerHtml = html.ToString();
                 }
+            }
 
-                // 上の処理が走るたび、trに対するhoverが解除されるので、今のカーソル位置にhoverを設定しなおす
-                var hover = webMain.Document.GetElementFromPoint(webMain.PointToClient(Cursor.Position));
-                while (hover != null)
+            // 表示更新
+            var html = new StringBuilder();
+            html.Append(@"<table id=""tweets"">");
+            lock (timelines)
+            {
+                // foreachでいいような気がするが、RT時に置き換えをやるので敢えてforで回す
+                for (int i = 0; i < timelines.Count; ++i)
                 {
-                    if (hover.TagName == "tr" || hover.TagName == "TR")
+                    var timeline = timelines[i];
+                    TwitterUser rt_user = null;
+                    if (timeline.retweeted_status != null)
                     {
-                        if (hover.GetAttribute("className").Equals("tweet"))
-                        {
-                            hover.SetAttribute("className", "hover");
-                        }
-                        break;
+                        rt_user = timeline.user;
+                        timeline.retweeted_status.Unread = timeline.Unread;
+                        timeline = timeline.retweeted_status;
                     }
-                    hover = hover.Parent;
+                    string className = "tweet";
+                    if (timeline.Unread)
+                    {
+                        className += " unread";
+                    }
+                    if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
+                    {
+                        className += " replied";
+                    }
+                    html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@"""><img src=""");
+                    html.Append(timeline.user.profile_image_url);
+                    html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@""">");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.name));
+                    html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@""">@");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@"</a><br/>");
+                    var text = WebUtility.HtmlEncode(timeline.text);
+                    if (timeline.entities != null && timeline.entities.urls != null)
+                    {
+                        foreach (var url in timeline.entities.urls)
+                        {
+                            text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                        }
+                    }
+                    if (timeline.entities != null && timeline.entities.media != null)
+                    {
+                        foreach (var media in timeline.entities.media)
+                        {
+                            text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
+                        }
+                    }
+                    if (timeline.entities != null && timeline.entities.hashtags != null)
+                    {
+                        foreach (var hashtag in timeline.entities.hashtags)
+                        {
+                            text = Regex.Replace(text, @"#" + Regex.Escape(hashtag.text) + @"\b", string.Format(@"<a href=""https://twitter.com/search?q=%23{0}&src=hash"">#{1}</a>", Uri.EscapeDataString(hashtag.text), hashtag.text));
+                        }
+                    }
+                    // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
+                    text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
+                    html.Append(text);
+                    html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
+                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+                    html.Append(@"/statuses/");
+                    html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
+                    html.Append(@""">");
+                    html.Append(WebUtility.HtmlEncode(timeline.created_at));
+                    html.Append(@"</a> <span class=""source"">");
+                    html.Append(timeline.source);
+                    html.Append(@"で</span>");
+                    if (rt_user != null)
+                    {
+                        html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
+                    }
+                    html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
                 }
+            }
+            html.Append(@"</table>");
+            webMain.Document.Body.InnerHtml = html.ToString();
 
+            // 上の処理が走るたび、trに対するhoverが解除されるので、今のカーソル位置にhoverを設定しなおす
+            var hover = webMain.Document.GetElementFromPoint(webMain.PointToClient(Cursor.Position));
+            while (hover != null)
+            {
+                if (hover.TagName == "tr" || hover.TagName == "TR")
+                {
+                    if (hover.GetAttribute("className").Equals("tweet"))
+                    {
+                        hover.SetAttribute("className", "hover");
+                    }
+                    break;
+                }
+                hover = hover.Parent;
+            }
+
+            // タスクトレイアイコン更新
+            if (curTLs != null)
+            {
                 SetNotifyIcon();
                 if (curTLs.Length > 0 && !this.Visible)
                 {
