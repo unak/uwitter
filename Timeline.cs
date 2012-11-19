@@ -20,7 +20,7 @@ namespace Uwitter
         {
             get
             {
-                var span = DateTime.UtcNow - DateTime.ParseExact(this.created_at, "ddd MMM dd hh:mm:ss +0000 yyyy", CultureInfo.GetCultureInfo("en-US"));
+                var span = DateTime.UtcNow - DateTime.ParseExact(this.created_at, "ddd MMM dd HH:mm:ss +0000 yyyy", CultureInfo.GetCultureInfo("en-US"));
                 var buf = new StringBuilder();
                 if (span.Days >= 365)
                 {
