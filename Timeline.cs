@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -15,6 +16,42 @@ namespace Uwitter
         public bool truncated { get; set; }
         [DataMember]
         public string created_at { get; set; }
+        public string RelattiveCreatedAt
+        {
+            get
+            {
+                var span = DateTime.UtcNow - DateTime.ParseExact(this.created_at, "ddd MMM dd hh:mm:ss +0000 yyyy", CultureInfo.GetCultureInfo("en-US"));
+                var buf = new StringBuilder();
+                if (span.Days >= 365)
+                {
+                    buf.Append(span.Days / 365);
+                    buf.Append("年");
+                }
+                if (span.Days >= 30)
+                {
+                    buf.Append((span.Days % 365) / 30);
+                    buf.Append("ヶ月");
+                }
+                if (span.Days > 0)
+                {
+                    buf.Append(span.Days % 30);
+                    buf.Append("日");
+                }
+                if (buf.Length > 0 || span.Hours > 0)
+                {
+                    buf.Append(span.Hours);
+                    buf.Append("時間");
+                }
+                if (buf.Length > 0 || span.Minutes > 0)
+                {
+                    buf.Append(span.Minutes);
+                    buf.Append("分");
+                }
+                buf.Append(span.Seconds);
+                buf.Append("秒前");
+                return buf.ToString();
+            }
+        }
         [DataMember]
         public bool favaorited { get; set; }
         [DataMember]

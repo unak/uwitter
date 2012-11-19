@@ -277,7 +277,7 @@ namespace Uwitter
                     html.Append(@"/statuses/");
                     html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
                     html.Append(@""">");
-                    html.Append(WebUtility.HtmlEncode(timeline.created_at));
+                    html.Append(WebUtility.HtmlEncode(timeline.RelattiveCreatedAt));
                     html.Append(@"</a> <span class=""source"">");
                     html.Append(timeline.source);
                     html.Append(@"で</span>");
