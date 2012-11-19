@@ -203,8 +203,8 @@
             this.cmbInterval.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbInterval.FormattingEnabled = true;
             this.cmbInterval.Items.AddRange(new object[] {
-            "15秒",
-            "30秒",
+            "15秒(Twitter側に制限されます)",
+            "30秒(Twitter側に制限されます)",
             "1分",
             "2分",
             "5分",
