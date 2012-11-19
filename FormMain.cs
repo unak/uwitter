@@ -95,28 +95,45 @@ namespace Uwitter
         {
             hasRead = true;
 
-            if (e.KeyChar == 0x0D && this.ActiveControl == editTweet)
+            if (this.ActiveControl == editTweet)
             {
-                if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
+                if (e.KeyChar == 0x0D)  // Enter
                 {
-                    if (in_reply_to_id != null)
+                    if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
                     {
-                        if (!Regex.IsMatch(editTweet.Text, string.Format(@"^@{0}\b", in_reply_to_name)))
+                        if (in_reply_to_id != null)
+                        {
+                            if (!Regex.IsMatch(editTweet.Text, string.Format(@"^@{0}\b", in_reply_to_name)))
+                            {
+                                in_reply_to_id = null;
+                                in_reply_to_name = null;
+                            }
+                        }
+                        if (twitter.SendTweet(editTweet.Text, in_reply_to_id))
                         {
                             in_reply_to_id = null;
                             in_reply_to_name = null;
+                            editTweet.Clear();
+                            timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
+                            timerCheck.Start();
                         }
                     }
-                    if (twitter.SendTweet(editTweet.Text, in_reply_to_id))
-                    {
-                        in_reply_to_id = null;
-                        in_reply_to_name = null;
-                        editTweet.Clear();
-                        timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
-                        timerCheck.Start();
-                    }
+                    e.Handled = true;
                 }
-                e.Handled = true;
+            }
+            else
+            {
+                switch (e.KeyChar)
+                {
+                    case 'j':
+                        ScrollTimeline(1);
+                        e.Handled = true;
+                        break;
+                    case 'k':
+                        ScrollTimeline(-1);
+                        e.Handled = true;
+                        break;
+                }
             }
         }
 
@@ -385,16 +402,32 @@ namespace Uwitter
         {
             hasRead = true;
 
-            if (e.KeyPressedCode == 0x09)
+            switch (e.KeyPressedCode)
             {
-                this.SelectNextControl(webMain, true, true, true, true);
-                e.ReturnValue = false;
+                case 9:     // TAB
+                    this.SelectNextControl(webMain, true, true, true, true);
+                    e.ReturnValue = false;
+                    break;
+                case 74:    // 'j'
+                    ScrollTimeline(1);
+                    break;
+                case 75:    // 'k'
+                    ScrollTimeline(-1);
+                    break;
             }
         }
 
-        void webMain_MouseMove(object sender, HtmlElementEventArgs e)
+        private void webMain_MouseMove(object sender, HtmlElementEventArgs e)
         {
             hasRead = true;
+        }
+
+        private void ScrollTimeline(int count)
+        {
+            if (webMain.Document.Body != null)
+            {
+                webMain.Document.Body.ScrollTop += count * 40;  // XXX:FIXME!!!
+            }
         }
 
         private void SetNotifyIcon(bool error = false)
