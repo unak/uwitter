@@ -23,6 +23,10 @@ Windows用のTwitterクライアントです。
 インストーラーとかないので、単にuwitter.exeを実行してください。
 後は、見ればわかるよきっと。
 
+ありがとう
+----------
+zophosさんにアイコン(の元画像)を描いて頂きました。
+
 らいせんす
 ----------
 Copyright (c) 2012 NAKAMURA Usaku usa@garbagecollect.jp

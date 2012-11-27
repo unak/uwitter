@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.btnSetting = new System.Windows.Forms.Button();
             this.timerCheck = new System.Windows.Forms.Timer(this.components);
@@ -59,8 +60,8 @@
             // 
             // editTweet
             // 
-            this.editTweet.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.editTweet.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.editTweet.Location = new System.Drawing.Point(0, 41);
             this.editTweet.MaxLength = 140;
             this.editTweet.Multiline = true;
@@ -72,9 +73,9 @@
             // 
             this.webMain.AllowNavigation = false;
             this.webMain.AllowWebBrowserDrop = false;
-            this.webMain.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.webMain.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.webMain.IsWebBrowserContextMenuEnabled = false;
             this.webMain.Location = new System.Drawing.Point(0, 114);
             this.webMain.MinimumSize = new System.Drawing.Size(20, 20);
@@ -92,6 +93,7 @@
             this.Controls.Add(this.webMain);
             this.Controls.Add(this.editTweet);
             this.Controls.Add(this.btnSetting);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
             this.Name = "FormMain";
             this.Shown += new System.EventHandler(this.FormMain_Shown);
