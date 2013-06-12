@@ -14,6 +14,8 @@ namespace Uwitter
         const int ITEM_HEIGHT = 80;
         const int ICON_SIZE = 24;
 
+        const int REFRESH_INTERVAL = 5 * 1000;  // 5 sec
+
         Twitter twitter;
         decimal? since_id;
         decimal? in_reply_to_id;
@@ -142,7 +144,7 @@ namespace Uwitter
             SettingForm setting = new SettingForm();
             if (setting.ShowDialog() == DialogResult.OK)
             {
-                timerCheck.Interval = Properties.Settings.Default.Interval;
+                timerCheck.Interval = REFRESH_INTERVAL;
 
                 if (string.IsNullOrEmpty(Properties.Settings.Default.AccessTokenSecret))
                 {
@@ -197,7 +199,7 @@ namespace Uwitter
             UpdateTimeline();
 
             // Intervalは毎回再設定する(へんなタイミングで呼ぶことがよくあるので)
-            timerCheck.Interval = Properties.Settings.Default.Interval > 0 ? Properties.Settings.Default.Interval : 60 * 1000;  // デフォルト1分
+            timerCheck.Interval = REFRESH_INTERVAL;
             timerCheck.Start();
         }
 
@@ -347,9 +349,9 @@ namespace Uwitter
             {
                 lock (timelines)
                 {
-                    for (int i = 0; i < curTLs.Length; ++i)
+                    for (int i = 0; i < curTLs.Count; ++i)
                     {
-                        var timeline = curTLs[curTLs.Length - i - 1];
+                        var timeline = curTLs[curTLs.Count - i - 1];
                         timeline.Unread = true;
                         timelines.Insert(0, timeline);
                         if (since_id == null || timeline.id > since_id)
@@ -461,7 +463,7 @@ namespace Uwitter
             if (curTLs != null)
             {
                 SetNotifyIcon();
-                if (curTLs.Length > 0 && !this.Visible)
+                if (curTLs.Count > 0 && !this.Visible)
                 {
                     var buf = new StringBuilder();
                     notifyIcon.ShowBalloonTip(15 * 1000, curTLs[0].user.name + " @" + curTLs[0].user.screen_name, curTLs[0].text, ToolTipIcon.None);
@@ -470,6 +472,15 @@ namespace Uwitter
             else
             {
                 SetNotifyIcon(true);
+            }
+        }
+
+        private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (twitter != null)
+            {
+                twitter.Dispose();
+                twitter = null;
             }
         }
     }

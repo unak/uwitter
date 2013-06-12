@@ -1,16 +1,19 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Uwitter
 {
-    class Twitter
+    class Twitter : IDisposable
     {
         const string REQUEST_TOKEN_URL = @"https://api.twitter.com/oauth/request_token";
         const string AUTHORIZE_URL = @"https://api.twitter.com/oauth/authorize";
@@ -19,6 +22,7 @@ namespace Uwitter
         const string HOME_TIMELINE_URL = @"https://api.twitter.com/1.1/statuses/home_timeline.json";
         const string UPDATE_STATUS_URL = @"https://api.twitter.com/1.1/statuses/update.json";
         const string RETWEET_URL = @"https://api.twitter.com/1.1/statuses/retweet/{0}.json";
+        const string USERSTREAM_URL = @"https://userstream.twitter.com/1.1/user.json";
 
         string consumerKey;
         string consumerSecret;
@@ -48,6 +52,15 @@ namespace Uwitter
             initialize(key, secret);
             accessToken = token;
             accessTokenSecret = tokenSecret;
+        }
+
+        public void Dispose()
+        {
+            if (streamThread != null && streamThread.IsAlive)
+            {
+                streamSignal = true;
+                //streamThread.Join();
+            }
         }
 
         private void initialize(string key, string secret)
@@ -140,31 +153,92 @@ namespace Uwitter
             return screenName;
         }
 
-        public Timeline[] GetTimeline(decimal? since_id = null)
+        private Thread streamThread = null;
+        private Queue<Timeline> timelineQueue = new Queue<Timeline>();
+        private bool streamSignal = false;
+        public List<Timeline> GetTimeline(decimal? since_id = null)
         {
-            var parameters = SetupInitialParameters();
-            if (since_id != null)
-            {
-                parameters.Add("since_id", since_id.ToString());
-            }
-            parameters.Add("count", "10");
-            parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
-            parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", HOME_TIMELINE_URL, parameters, accessTokenSecret)));
+            List<Timeline> list = null;
 
-            var body = HttpGet(HOME_TIMELINE_URL, parameters);
-            if (string.IsNullOrEmpty(body))
+            if (since_id == null)
             {
-                return null;
+                // 初回なのでとりあえず10個ほどRESTで取ってくる
+                var parameters = SetupInitialParameters();
+                parameters.Add("count", "10");
+                parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+                parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", HOME_TIMELINE_URL, parameters, accessTokenSecret)));
+
+                var body = HttpGet(HOME_TIMELINE_URL, parameters);
+                if (body == null)
+                {
+                    return null;
+                }
+                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(body)))
+                {
+                    var serealizer = new DataContractJsonSerializer(typeof(Timeline[]));
+                    list = new List<Timeline>((Timeline[])serealizer.ReadObject(ms));
+                }
             }
 
-            var serializer = new DataContractJsonSerializer(typeof(Timeline[]));
-            Timeline[] obj;
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(body)))
+            if (streamThread == null || !streamThread.IsAlive)
             {
-                obj = (Timeline[])serializer.ReadObject(stream);
+                var parameters = SetupInitialParameters();
+                parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+                parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", USERSTREAM_URL, parameters, accessTokenSecret)));
+
+                var stream = HttpGetStream(USERSTREAM_URL, parameters);
+                if (stream == null)
+                {
+                    return null;
+                }
+
+                streamThread = new Thread(delegate()
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(Timeline));
+                    using (var reader = new StreamReader(stream))
+                    {
+                        string line;
+                        while (!streamSignal && (line = reader.ReadLine()) != null)
+                        {
+                            if (line.StartsWith("{\"created_at\""))
+                            {
+                                using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(line)))
+                                {
+                                    var tweet = (Timeline)serializer.ReadObject(ms);
+                                    lock (((ICollection)timelineQueue).SyncRoot)
+                                    {
+                                        timelineQueue.Enqueue(tweet);
+                                    }
+                                }
+                            }
+                        }
+                        if (streamSignal)
+                        {
+                            // XXX:FIXME!!!
+                        }
+                    }
+                    stream.Dispose();
+                });
+                streamThread.Start();
             }
 
-            return obj;
+            lock (((ICollection)timelineQueue).SyncRoot)
+            {
+                while (timelineQueue.Count > 0)
+                {
+                    var tweet = timelineQueue.Dequeue();
+                    if (since_id == null || tweet.id > since_id)
+                    {
+                        if (list == null)
+                        {
+                            list = new List<Timeline>();
+                        }
+                        list.Add(tweet);
+                    }
+                }
+            }
+
+            return list;
         }
 
         public bool SendTweet(string tweet, decimal? in_reply_to = null)
@@ -204,51 +278,49 @@ namespace Uwitter
             return true;
         }
 
-        public static string HttpGet(string url, SortedDictionary<string, string> parameters)
+        public static Stream HttpGetStream(string url, SortedDictionary<string, string> parameters)
         {
             if (parameters != null && parameters.Count > 0)
             {
                 url += '?' + JoinParameters(parameters);
             }
-            return HttpRequest<string>(url, null, (res) =>
+            return HttpRequest<Stream>(url, null, (res) =>
+            {
+                return res.GetResponseStream();
+            });
+        }
+
+        public static string HttpGet(string url, SortedDictionary<string, string> parameters)
+        {
+            using (var stream = HttpGetStream(url, parameters))
             {
                 string body;
-                using (var stream = res.GetResponseStream())
+                using (var reader = new StreamReader(stream))
                 {
-                    using (var reader = new StreamReader(stream))
-                    {
-                        body = reader.ReadToEnd();
-                    }
+                    body = reader.ReadToEnd();
                 }
                 return body;
-            });
+            }
         }
 
         public static byte[] HttpGetBinary(string url, SortedDictionary<string, string> parameters)
         {
-            if (parameters != null && parameters.Count > 0)
+            byte[] body = new byte[0];
+            using (var stream = HttpGetStream(url, parameters))
             {
-                url += '?' + JoinParameters(parameters);
-            }
-            return HttpRequest<byte[]>(url, null, (res) =>
-            {
-                byte[] body = new byte[0];
-                using (var stream = res.GetResponseStream())
+                using (var reader = new System.IO.BinaryReader(stream))
                 {
-                    using (var reader = new System.IO.BinaryReader(stream))
+                    var buf = new byte[4096];
+                    int read;
+                    while ((read = reader.Read(buf, 0, buf.Length)) > 0)
                     {
-                        var buf = new byte[4096];
-                        int read;
-                        while ((read = reader.Read(buf, 0, buf.Length)) > 0)
-                        {
-                            Array.Resize(ref buf, read);
-                            Array.Resize(ref body, body.Length + read);
-                            buf.CopyTo(body, body.Length - read);
-                        }
+                        Array.Resize(ref buf, read);
+                        Array.Resize(ref body, body.Length + read);
+                        buf.CopyTo(body, body.Length - read);
                     }
                 }
-                return body;
-            });
+            }
+            return body;
         }
 
         public static string HttpPost(string url, SortedDictionary<string, string> parameters)

@@ -30,6 +30,7 @@
         {
             this.tabSettings = new System.Windows.Forms.TabControl();
             this.tabAccount = new System.Windows.Forms.TabPage();
+            this.btnLogout = new System.Windows.Forms.Button();
             this.linkUser = new System.Windows.Forms.LinkLabel();
             this.label2 = new System.Windows.Forms.Label();
             this.editPin = new System.Windows.Forms.TextBox();
@@ -46,7 +47,6 @@
             this.label3 = new System.Windows.Forms.Label();
             this.btnOk = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
-            this.btnLogout = new System.Windows.Forms.Button();
             this.tabSettings.SuspendLayout();
             this.tabAccount.SuspendLayout();
             this.tabNetwork.SuspendLayout();
@@ -79,6 +79,16 @@
             this.tabAccount.TabIndex = 0;
             this.tabAccount.Text = "アカウント";
             this.tabAccount.UseVisualStyleBackColor = true;
+            // 
+            // btnLogout
+            // 
+            this.btnLogout.Location = new System.Drawing.Point(372, 12);
+            this.btnLogout.Name = "btnLogout";
+            this.btnLogout.Size = new System.Drawing.Size(57, 23);
+            this.btnLogout.TabIndex = 5;
+            this.btnLogout.Text = "ログアウト";
+            this.btnLogout.UseVisualStyleBackColor = true;
+            this.btnLogout.Click += new System.EventHandler(this.btnLogout_Click);
             // 
             // linkUser
             // 
@@ -247,16 +257,6 @@
             this.btnCancel.Text = "キャンセル";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
-            // 
-            // btnLogout
-            // 
-            this.btnLogout.Location = new System.Drawing.Point(372, 12);
-            this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(57, 23);
-            this.btnLogout.TabIndex = 5;
-            this.btnLogout.Text = "ログアウト";
-            this.btnLogout.UseVisualStyleBackColor = true;
-            this.btnLogout.Click += new System.EventHandler(this.btnLogout_Click);
             // 
             // SettingForm
             // 
