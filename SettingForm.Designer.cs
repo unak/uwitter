@@ -46,6 +46,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.btnOk = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.btnLogout = new System.Windows.Forms.Button();
             this.tabSettings.SuspendLayout();
             this.tabAccount.SuspendLayout();
             this.tabNetwork.SuspendLayout();
@@ -65,6 +66,7 @@
             // 
             // tabAccount
             // 
+            this.tabAccount.Controls.Add(this.btnLogout);
             this.tabAccount.Controls.Add(this.linkUser);
             this.tabAccount.Controls.Add(this.label2);
             this.tabAccount.Controls.Add(this.editPin);
@@ -246,6 +248,16 @@
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
+            // btnLogout
+            // 
+            this.btnLogout.Location = new System.Drawing.Point(372, 12);
+            this.btnLogout.Name = "btnLogout";
+            this.btnLogout.Size = new System.Drawing.Size(57, 23);
+            this.btnLogout.TabIndex = 5;
+            this.btnLogout.Text = "ログアウト";
+            this.btnLogout.UseVisualStyleBackColor = true;
+            this.btnLogout.Click += new System.EventHandler(this.btnLogout_Click);
+            // 
             // SettingForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -293,5 +305,6 @@
         private System.Windows.Forms.CheckBox chkUseProxy;
         private System.Windows.Forms.Button btnOk;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnLogout;
     }
 }

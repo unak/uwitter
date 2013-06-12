@@ -19,11 +19,13 @@ namespace Uwitter
             {
                 linkUser.Text = Properties.Settings.Default.ScreenName;
                 linkUser.Enabled = true;
+                btnLogout.Enabled = true;
             }
             else
             {
                 linkUser.Text = "(未認証)";
                 linkUser.Enabled = false;
+                btnLogout.Enabled = false;
             }
             twitter = null;
             editPin.Text = "";
@@ -82,6 +84,21 @@ namespace Uwitter
             }
         }
 
+        private void btnLogout_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.AccessToken = "";
+            Properties.Settings.Default.AccessTokenSecret = "";
+            Properties.Settings.Default.UserId = "";
+            Properties.Settings.Default.ScreenName = "";
+            Properties.Settings.Default.Save();
+
+            linkUser.Text = "(未認証)";
+            linkUser.Enabled = false;
+            btnLogout.Enabled = false;
+
+            twitter = null;
+        }
+
         private void btnAuthorize_Click(object sender, EventArgs e)
         {
             if (twitter != null && editPin.Enabled)
@@ -97,6 +114,7 @@ namespace Uwitter
                 }
                 linkUser.Text = userName;
                 linkUser.Enabled = true;
+                btnLogout.Enabled = true;
             }
             else
             {

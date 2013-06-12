@@ -194,6 +194,140 @@ namespace Uwitter
                 return;
             }
 
+            UpdateTimeline();
+
+            // Intervalは毎回再設定する(へんなタイミングで呼ぶことがよくあるので)
+            timerCheck.Interval = Properties.Settings.Default.Interval > 0 ? Properties.Settings.Default.Interval : 60 * 1000;  // デフォルト1分
+            timerCheck.Start();
+        }
+
+        private void webMain_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            webMain.Visible = true; // 音を消すために非表示にしてあったので戻す
+            webMain.Document.Click += new HtmlElementEventHandler(webMain_DocumentClick);
+            webMain.Document.Body.KeyDown += new HtmlElementEventHandler(webMain_KeyDown);
+            webMain.Document.MouseMove += new HtmlElementEventHandler(webMain_MouseMove);
+        }
+
+        private void webMain_DocumentClick(object sender, HtmlElementEventArgs e)
+        {
+            hasRead = true;
+
+            var clicked = webMain.Document.GetElementFromPoint(e.MousePosition);
+            while (clicked != null)
+            {
+                if (clicked.TagName == "a" || clicked.TagName == "A")
+                {
+                    break;
+                }
+                clicked = clicked.Parent;
+            }
+
+            if (clicked != null)
+            {
+                var className = clicked.GetAttribute("className");
+                var href = clicked.GetAttribute("href");
+                if (className.Equals("reply"))
+                {
+                    in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
+                    in_reply_to_name = Regex.Replace(href, ".*/", "");
+                    editTweet.Text = string.Format(@"@{0} ", in_reply_to_name);
+                    this.ActiveControl = editTweet;
+                    editTweet.Select(editTweet.Text.Length, 0);
+                }
+                else if (className.Equals("retweet"))
+                {
+                    if (twitter != null && twitter.IsActive && 
+                        MessageBox.Show("リツイートしますか?", Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
+                        {
+                            editTweet.Clear();
+                            timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
+                            timerCheck.Start();
+                        }
+                    }
+                }
+                else if (!string.IsNullOrEmpty(href))
+                {
+                    Process.Start(href);
+                }
+            }
+            e.ReturnValue = false;
+        }
+
+        private void webMain_KeyDown(object sender, HtmlElementEventArgs e)
+        {
+            hasRead = true;
+
+            switch (e.KeyPressedCode)
+            {
+                case 9:     // TAB
+                    this.SelectNextControl(webMain, true, true, true, true);
+                    e.ReturnValue = false;
+                    break;
+                case 74:    // 'j'
+                    ScrollTimeline(1);
+                    break;
+                case 75:    // 'k'
+                    ScrollTimeline(-1);
+                    break;
+            }
+        }
+
+        private void webMain_MouseMove(object sender, HtmlElementEventArgs e)
+        {
+            hasRead = true;
+        }
+
+        private void ScrollTimeline(int count)
+        {
+            if (webMain.Document.Body != null)
+            {
+                webMain.Document.Body.ScrollTop += count * 40;  // XXX:FIXME!!!
+            }
+        }
+
+        private void SetNotifyIcon(bool error = false)
+        {
+            lock (timelines)
+            {
+                int num = 0;
+                foreach (var timeline in timelines)
+                {
+                    if (timeline.Unread)
+                    {
+                        ++num;
+                    }
+                }
+                if (num > 0)
+                {
+                    notifyIcon.Text = string.Format("{0} (未読:{1})", Application.ProductName, num);
+                }
+                else
+                {
+                    notifyIcon.Text = Application.ProductName;
+                }
+            }
+
+            if (error)
+            {
+                // XXX:FIXME!!! エラーっぽいアイコン
+                notifyIcon.Icon = Properties.Resources.notify;
+            }
+            else if (twitter == null || !twitter.IsActive)
+            {
+                // XXX:FIXME!!! アクティブじゃないっぽいアイコン
+                notifyIcon.Icon = Properties.Resources.notify;
+            }
+            else
+            {
+                notifyIcon.Icon = Properties.Resources.notify;
+            }
+        }
+
+        private void UpdateTimeline()
+        {
             // 未読フラグを落とす
             if (hasRead)
             {
@@ -336,135 +470,6 @@ namespace Uwitter
             else
             {
                 SetNotifyIcon(true);
-            }
-
-            // Intervalは毎回再設定する(へんなタイミングで呼ぶことがよくあるので)
-            timerCheck.Interval = Properties.Settings.Default.Interval > 0 ? Properties.Settings.Default.Interval : 60 * 1000;  // デフォルト1分
-            timerCheck.Start();
-        }
-
-        private void webMain_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
-        {
-            webMain.Visible = true; // 音を消すために非表示にしてあったので戻す
-            webMain.Document.Click += new HtmlElementEventHandler(webMain_DocumentClick);
-            webMain.Document.Body.KeyDown += new HtmlElementEventHandler(webMain_KeyDown);
-            webMain.Document.MouseMove += new HtmlElementEventHandler(webMain_MouseMove);
-        }
-
-        private void webMain_DocumentClick(object sender, HtmlElementEventArgs e)
-        {
-            hasRead = true;
-
-            var clicked = webMain.Document.GetElementFromPoint(e.MousePosition);
-            while (clicked != null)
-            {
-                if (clicked.TagName == "a" || clicked.TagName == "A")
-                {
-                    break;
-                }
-                clicked = clicked.Parent;
-            }
-
-            if (clicked != null)
-            {
-                var className = clicked.GetAttribute("className");
-                var href = clicked.GetAttribute("href");
-                if (className.Equals("reply"))
-                {
-                    in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
-                    in_reply_to_name = Regex.Replace(href, ".*/", "");
-                    editTweet.Text = string.Format(@"@{0} ", in_reply_to_name);
-                    this.ActiveControl = editTweet;
-                    editTweet.Select(editTweet.Text.Length, 0);
-                }
-                else if (className.Equals("retweet"))
-                {
-                    if (twitter != null && twitter.IsActive && 
-                        MessageBox.Show("リツイートしますか?", Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                    {
-                        if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
-                        {
-                            editTweet.Clear();
-                            timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
-                            timerCheck.Start();
-                        }
-                    }
-                }
-                else if (!string.IsNullOrEmpty(href))
-                {
-                    Process.Start(href);
-                }
-            }
-            e.ReturnValue = false;
-        }
-
-        private void webMain_KeyDown(object sender, HtmlElementEventArgs e)
-        {
-            hasRead = true;
-
-            switch (e.KeyPressedCode)
-            {
-                case 9:     // TAB
-                    this.SelectNextControl(webMain, true, true, true, true);
-                    e.ReturnValue = false;
-                    break;
-                case 74:    // 'j'
-                    ScrollTimeline(1);
-                    break;
-                case 75:    // 'k'
-                    ScrollTimeline(-1);
-                    break;
-            }
-        }
-
-        private void webMain_MouseMove(object sender, HtmlElementEventArgs e)
-        {
-            hasRead = true;
-        }
-
-        private void ScrollTimeline(int count)
-        {
-            if (webMain.Document.Body != null)
-            {
-                webMain.Document.Body.ScrollTop += count * 40;  // XXX:FIXME!!!
-            }
-        }
-
-        private void SetNotifyIcon(bool error = false)
-        {
-            lock (timelines)
-            {
-                int num = 0;
-                foreach (var timeline in timelines)
-                {
-                    if (timeline.Unread)
-                    {
-                        ++num;
-                    }
-                }
-                if (num > 0)
-                {
-                    notifyIcon.Text = string.Format("{0} (未読:{1})", Application.ProductName, num);
-                }
-                else
-                {
-                    notifyIcon.Text = Application.ProductName;
-                }
-            }
-
-            if (error)
-            {
-                // XXX:FIXME!!! エラーっぽいアイコン
-                notifyIcon.Icon = Properties.Resources.notify;
-            }
-            else if (twitter == null || !twitter.IsActive)
-            {
-                // XXX:FIXME!!! アクティブじゃないっぽいアイコン
-                notifyIcon.Icon = Properties.Resources.notify;
-            }
-            else
-            {
-                notifyIcon.Icon = Properties.Resources.notify;
             }
         }
     }

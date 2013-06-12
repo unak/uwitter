@@ -14,6 +14,7 @@ namespace Uwitter
     {
         const string REQUEST_TOKEN_URL = @"https://api.twitter.com/oauth/request_token";
         const string AUTHORIZE_URL = @"https://api.twitter.com/oauth/authorize";
+        const string AUTHENTICATE_URL = @"https://api.twitter.com/oauth/authenticate";
         const string ACCESS_TOKEN_URL = @"https://api.twitter.com/oauth/access_token";
         const string HOME_TIMELINE_URL = @"https://api.twitter.com/1.1/statuses/home_timeline.json";
         const string UPDATE_STATUS_URL = @"https://api.twitter.com/1.1/statuses/update.json";
@@ -89,14 +90,14 @@ namespace Uwitter
                 return null;
             }
 
-            return AUTHORIZE_URL + "?oauth_token=" + Uri.EscapeDataString(requestToken);
+            return AUTHENTICATE_URL + "?oauth_token=" + Uri.EscapeDataString(requestToken);
         }
 
         public string GetAccessToken(string pin)
         {
             var parameters = SetupInitialParameters();
             parameters.Add("oauth_token", Uri.EscapeDataString(requestToken));
-            parameters.Add("oauth_verifyer", pin);
+            parameters.Add("oauth_verifier", pin);
             parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", ACCESS_TOKEN_URL, parameters)));
 
             var body = HttpGet(ACCESS_TOKEN_URL, parameters);
