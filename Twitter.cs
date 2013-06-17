@@ -162,9 +162,9 @@ namespace Uwitter
 
             if (since_id == null)
             {
-                // 初回なのでとりあえず10個ほどRESTで取ってくる
+                // 初回なのでとりあえず30個ほどRESTで取ってくる
                 var parameters = SetupInitialParameters();
-                parameters.Add("count", "10");
+                parameters.Add("count", "30");
                 parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
                 parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", HOME_TIMELINE_URL, parameters, accessTokenSecret)));
 
