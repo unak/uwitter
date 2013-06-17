@@ -267,7 +267,7 @@ namespace Uwitter
                         for (int i = 0; i < matches.Count; i++)
                         {
                             var match = matches[i].Value;
-                            if (mentions.IndexOf(match) < 0)
+                            if (mentions.IndexOf(match) < 0 && !match.Equals("@" + Properties.Settings.Default.ScreenName))
                             {
                                 mentions.Add(match);
                             }
