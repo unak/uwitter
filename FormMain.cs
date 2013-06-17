@@ -122,6 +122,11 @@ namespace Uwitter
                     }
                     e.Handled = true;
                 }
+                else if (string.IsNullOrEmpty(editTweet.Text))
+                {
+                    in_reply_to_id = null;
+                    in_reply_to_name = null;
+                }
             }
             else
             {
@@ -233,7 +238,22 @@ namespace Uwitter
                 {
                     in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
                     in_reply_to_name = Regex.Replace(href, ".*/", "");
-                    editTweet.Text = string.Format(@"@{0} ", in_reply_to_name);
+                    var mentions = new List<string>();
+                    Timeline timeline = GetTimelineById(in_reply_to_id.Value);
+                    mentions.Add("@" + in_reply_to_name);
+                    if (timeline != null)
+                    {
+                        var matches = Regex.Matches(WebUtility.HtmlEncode(timeline.text), @"@([0-9A-Za-z_]+)");
+                        for (int i = 0; i < matches.Count; i++)
+                        {
+                            var match = matches[i].Value;
+                            if (mentions.IndexOf(match) < 0)
+                            {
+                                mentions.Add(match);
+                            }
+                        }
+                    }
+                    editTweet.Text = string.Join(" ", mentions) + " ";
                     this.ActiveControl = editTweet;
                     editTweet.Select(editTweet.Text.Length, 0);
                 }
@@ -482,6 +502,23 @@ namespace Uwitter
                 twitter.Dispose();
                 twitter = null;
             }
+        }
+
+        private Timeline GetTimelineById(decimal id)
+        {
+            Timeline timeline = null;
+            lock (timelines)
+            {
+                timeline = timelines.Find(delegate(Timeline elem)
+                {
+                    if (elem.retweeted_status != null)
+                    {
+                        elem = elem.retweeted_status;
+                    }
+                    return elem.id.Equals(id);
+                });
+            }
+            return timeline;
         }
     }
 }
