@@ -22,6 +22,7 @@ namespace Uwitter
         string in_reply_to_name;
         List<Timeline> timelines;
         bool hasRead;
+        FormPopup popup;
 
         public FormMain()
         {
@@ -61,6 +62,8 @@ namespace Uwitter
 
             webMain.Visible = false;    // 音を消すため
             webMain.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
+
+            popup = new FormPopup();
         }
 
         private void FormMain_Shown(object sender, EventArgs e)
@@ -166,7 +169,7 @@ namespace Uwitter
 
         private void btnSetting_Click(object sender, EventArgs e)
         {
-            SettingForm setting = new SettingForm();
+            var setting = new SettingForm();
             if (setting.ShowDialog() == DialogResult.OK)
             {
                 timerCheck.Interval = REFRESH_INTERVAL;
@@ -259,7 +262,7 @@ namespace Uwitter
                     in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
                     in_reply_to_name = Regex.Replace(href, ".*/", "");
                     var mentions = new List<string>();
-                    Timeline timeline = GetTimelineById(in_reply_to_id.Value);
+                    var timeline = GetTimelineById(in_reply_to_id.Value);
                     mentions.Add("@" + in_reply_to_name);
                     if (timeline != null)
                     {
@@ -288,6 +291,31 @@ namespace Uwitter
                             timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
                             timerCheck.Start();
                         }
+                    }
+                }
+                else if (className.Equals("in-reply-to"))
+                {
+                    var id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)/[^/]*$", "$1"));
+                    var user = Regex.Replace(href, ".*/", "");
+                    var timeline = GetTimelineById(id);
+                    if (timeline == null && twitter != null && twitter.IsActive)
+                    {
+                        timeline = twitter.GetUserTimeline(user, id);
+                    }
+                    if (timeline != null)
+                    {
+                        popup.SetHTML("<table id=\"tweets\">" + TimelineToHtml(timeline) + "</table>");
+                        popup.StartPosition = FormStartPosition.Manual;
+                        popup.Location = Cursor.Position;
+                        if (popup.Right >= Screen.PrimaryScreen.Bounds.Right)
+                        {
+                            popup.Left -= popup.Right - Screen.PrimaryScreen.Bounds.Right;
+                        }
+                        if (popup.Bottom >= Screen.PrimaryScreen.Bounds.Bottom)
+                        {
+                            popup.Top -= popup.Bottom - Screen.PrimaryScreen.Bounds.Bottom;
+                        }
+                        popup.Show();
                     }
                 }
                 else if (className.Equals("more"))
@@ -435,76 +463,7 @@ namespace Uwitter
                 // foreachでいいような気がするが、RT時に置き換えをやるので敢えてforで回す
                 for (int i = 0; i < timelines.Count; ++i)
                 {
-                    var timeline = timelines[i];
-                    TwitterUser rt_user = null;
-                    if (timeline.retweeted_status != null)
-                    {
-                        rt_user = timeline.user;
-                        timeline.retweeted_status.Unread = timeline.Unread;
-                        timeline = timeline.retweeted_status;
-                    }
-                    string className = "tweet";
-                    if (timeline.Unread)
-                    {
-                        className += " unread";
-                    }
-                    if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
-                    {
-                        className += " replied";
-                    }
-                    html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@"""><img src=""");
-                    html.Append(timeline.user.profile_image_url);
-                    html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@""">");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.name));
-                    html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@""">@");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@"</a><br/>");
-                    var text = WebUtility.HtmlEncode(timeline.text);
-                    if (timeline.entities != null && timeline.entities.urls != null)
-                    {
-                        foreach (var url in timeline.entities.urls)
-                        {
-                            text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
-                        }
-                    }
-                    if (timeline.entities != null && timeline.entities.media != null)
-                    {
-                        foreach (var media in timeline.entities.media)
-                        {
-                            text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
-                        }
-                    }
-                    if (timeline.entities != null && timeline.entities.hashtags != null)
-                    {
-                        foreach (var hashtag in timeline.entities.hashtags)
-                        {
-                            text = Regex.Replace(text, @"#" + Regex.Escape(hashtag.text) + @"\b", string.Format(@"<a href=""https://twitter.com/search?q=%23{0}&src=hash"">#{1}</a>", Uri.EscapeDataString(hashtag.text), hashtag.text));
-                        }
-                    }
-                    // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
-                    text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
-                    text = Regex.Replace(text, "\n", "<br/>");  // 改行...
-                    html.Append(text);
-                    html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
-                    html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
-                    html.Append(@"/statuses/");
-                    html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
-                    html.Append(@""">");
-                    html.Append(WebUtility.HtmlEncode(timeline.RelativeCreatedAt));
-                    html.Append(@"</a> <span class=""source"">");
-                    html.Append(timeline.source);
-                    html.Append(@"で</span>");
-                    if (rt_user != null)
-                    {
-                        html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
-                    }
-                    html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
+                    html.Append(TimelineToHtml(timelines[i]));
                 }
             }
             html.Append(@"<tr><td class=""more"" colspan=""3""><a class=""more"" href="""">もっと見る</a></td></tr>");
@@ -540,6 +499,87 @@ namespace Uwitter
             {
                 SetNotifyIcon(true);
             }
+        }
+
+        private static string TimelineToHtml(Timeline timeline)
+        {
+            var html = new StringBuilder();
+            TwitterUser rt_user = null;
+            if (timeline.retweeted_status != null)
+            {
+                rt_user = timeline.user;
+                timeline.retweeted_status.Unread = timeline.Unread;
+                timeline = timeline.retweeted_status;
+            }
+            string className = "tweet";
+            if (timeline.Unread)
+            {
+                className += " unread";
+            }
+            if (timeline.in_reply_to_user_id != null && Convert.ToDecimal(Properties.Settings.Default.UserId) == timeline.in_reply_to_user_id)
+            {
+                className += " replied";
+            }
+            html.Append(string.Format(@"<tr class=""{0}"" onmouseover=""this.className=this.className.replace('tweet', 'hover');"" onmouseout=""this.className=this.className.replace('hover', 'tweet');""><td><a href=""https://twitter.com/", className));
+            html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+            html.Append(@"""><img src=""");
+            html.Append(timeline.user.profile_image_url);
+            html.Append(@"""/></a></td><td><a class=""name"" href=""https://twitter.com/");
+            html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+            html.Append(@""">");
+            html.Append(WebUtility.HtmlEncode(timeline.user.name));
+            html.Append(@"</a> <a class=""screen_name"" href=""https://twitter.com/");
+            html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+            html.Append(@""">@");
+            html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+            html.Append(@"</a><br/>");
+            var text = WebUtility.HtmlEncode(timeline.text);
+            if (timeline.entities != null && timeline.entities.urls != null)
+            {
+                foreach (var url in timeline.entities.urls)
+                {
+                    text = Regex.Replace(text, @"\b" + Regex.Escape(url.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", url.expanded_url, url.display_url));
+                }
+            }
+            if (timeline.entities != null && timeline.entities.media != null)
+            {
+                foreach (var media in timeline.entities.media)
+                {
+                    text = Regex.Replace(text, @"\b" + Regex.Escape(media.url) + @"\b", string.Format(@"<a href=""{0}"">{1}</a>", media.expanded_url, media.display_url));
+                }
+            }
+            if (timeline.entities != null && timeline.entities.hashtags != null)
+            {
+                foreach (var hashtag in timeline.entities.hashtags)
+                {
+                    text = Regex.Replace(text, @"#" + Regex.Escape(hashtag.text) + @"\b", string.Format(@"<a href=""https://twitter.com/search?q=%23{0}&src=hash"">#{1}</a>", Uri.EscapeDataString(hashtag.text), hashtag.text));
+                }
+            }
+            // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
+            text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
+            text = Regex.Replace(text, "\n", "<br/>");  // 改行...
+            html.Append(text);
+            html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
+            html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
+            html.Append(@"/statuses/");
+            html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
+            html.Append(@""">");
+            html.Append(WebUtility.HtmlEncode(timeline.RelativeCreatedAt));
+            html.Append(@"</a>");
+            if (timeline.in_reply_to_status_id != null)
+            {
+                html.Append(string.Format(@" <a class=""in-reply-to"" href=""{0}/{1}"">{2} への返信</a>", timeline.in_reply_to_status_id.ToString(), timeline.in_reply_to_user_id.ToString(), timeline.in_reply_to_screen_name));
+            }
+            html.Append(@" <span class=""source"">");
+            html.Append(timeline.source);
+            html.Append(@"で</span>");
+            if (rt_user != null)
+            {
+                html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
+            }
+            html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
+
+            return html.ToString();
         }
 
         private Timeline GetTimelineById(decimal id)

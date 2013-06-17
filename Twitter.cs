@@ -20,6 +20,7 @@ namespace Uwitter
         const string AUTHENTICATE_URL = @"https://api.twitter.com/oauth/authenticate";
         const string ACCESS_TOKEN_URL = @"https://api.twitter.com/oauth/access_token";
         const string HOME_TIMELINE_URL = @"https://api.twitter.com/1.1/statuses/home_timeline.json";
+        const string USER_TIMELINE_URL = @"https://api.twitter.com/1.1/statuses/user_timeline.json";
         const string UPDATE_STATUS_URL = @"https://api.twitter.com/1.1/statuses/update.json";
         const string RETWEET_URL = @"https://api.twitter.com/1.1/statuses/retweet/{0}.json";
         const string USERSTREAM_URL = @"https://userstream.twitter.com/1.1/user.json";
@@ -243,6 +244,32 @@ namespace Uwitter
             }
 
             return list;
+        }
+
+        public Timeline GetUserTimeline(string user_id, decimal id)
+        {
+            var parameters = SetupInitialParameters();
+            parameters.Add("user_id", user_id);
+            parameters.Add("count", "1");
+            parameters.Add("max_id", id.ToString());
+            parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+            parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", USER_TIMELINE_URL, parameters, accessTokenSecret)));
+
+            var body = HttpGet(USER_TIMELINE_URL, parameters);
+            if (body == null)
+            {
+                return null;
+            }
+            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(body)))
+            {
+                var serealizer = new DataContractJsonSerializer(typeof(Timeline[]));
+                var list = new List<Timeline>((Timeline[])serealizer.ReadObject(ms));
+                if (list.Count == 1)
+                {
+                    return list[0];
+                }
+            }
+            return null;
         }
 
         public bool SendTweet(string tweet, decimal? in_reply_to = null)
