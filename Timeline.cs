@@ -16,7 +16,7 @@ namespace Uwitter
         public bool truncated { get; set; }
         [DataMember]
         public string created_at { get; set; }
-        public string RelattiveCreatedAt
+        public string RelativeCreatedAt
         {
             get
             {

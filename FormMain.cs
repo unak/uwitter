@@ -71,6 +71,15 @@ namespace Uwitter
             SetNotifyIcon();
         }
 
+        private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (twitter != null)
+            {
+                twitter.Dispose();
+                twitter = null;
+            }
+        }
+
         private void FormMain_ClientSizeChanged(object sender, EventArgs e)
         {
             if (this.WindowState == FormWindowState.Minimized)
@@ -99,30 +108,7 @@ namespace Uwitter
 
             if (this.ActiveControl == editTweet)
             {
-                if (e.KeyChar == 0x0D)  // Enter
-                {
-                    if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
-                    {
-                        if (in_reply_to_id != null)
-                        {
-                            if (!Regex.IsMatch(editTweet.Text, string.Format(@"^@{0}\b", in_reply_to_name)))
-                            {
-                                in_reply_to_id = null;
-                                in_reply_to_name = null;
-                            }
-                        }
-                        if (twitter.SendTweet(editTweet.Text, in_reply_to_id))
-                        {
-                            in_reply_to_id = null;
-                            in_reply_to_name = null;
-                            editTweet.Clear();
-                            timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
-                            timerCheck.Start();
-                        }
-                    }
-                    e.Handled = true;
-                }
-                else if (string.IsNullOrEmpty(editTweet.Text))
+                if (string.IsNullOrEmpty(editTweet.Text))
                 {
                     in_reply_to_id = null;
                     in_reply_to_name = null;
@@ -140,6 +126,29 @@ namespace Uwitter
                         ScrollTimeline(-1);
                         e.Handled = true;
                         break;
+                }
+            }
+        }
+
+        private void btnTweet_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(editTweet.Text) && twitter != null && twitter.IsActive)
+            {
+                if (in_reply_to_id != null)
+                {
+                    if (!Regex.IsMatch(editTweet.Text, string.Format(@"^@{0}\b", in_reply_to_name)))
+                    {
+                        in_reply_to_id = null;
+                        in_reply_to_name = null;
+                    }
+                }
+                if (twitter.SendTweet(editTweet.Text, in_reply_to_id))
+                {
+                    in_reply_to_id = null;
+                    in_reply_to_name = null;
+                    editTweet.Clear();
+                    timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
+                    timerCheck.Start();
                 }
             }
         }
@@ -270,6 +279,27 @@ namespace Uwitter
                         }
                     }
                 }
+                else if (className.Equals("more"))
+                {
+                    if (twitter != null && twitter.IsActive)
+                    {
+                        decimal? since_id = null;
+                        if (timelines != null && timelines.Count > 0)
+                        {
+                            since_id = timelines[timelines.Count - 1].id;
+                        }
+                        var oldTweets = twitter.GetTimeline(since_id, true);
+                        if (oldTweets != null)
+                        {
+                            oldTweets.RemoveAt(0);  // 先頭は重複なので捨てる
+                            lock (timelines)
+                            {
+                                timelines.AddRange(oldTweets);
+                            }
+                            UpdateTimeline(false);
+                        }
+                    }
+                }
                 else if (!string.IsNullOrEmpty(href))
                 {
                     Process.Start(href);
@@ -348,7 +378,7 @@ namespace Uwitter
             }
         }
 
-        private void UpdateTimeline()
+        private void UpdateTimeline(bool shouldRead = true)
         {
             // 未読フラグを落とす
             if (hasRead)
@@ -363,20 +393,24 @@ namespace Uwitter
                 }
             }
 
-            // タイムライン取得
-            var curTLs = twitter.GetTimeline(since_id);
-            if (curTLs != null)
+            List<Timeline> curTLs = null;
+            if (shouldRead)
             {
-                lock (timelines)
+                // タイムライン取得
+                curTLs = twitter.GetTimeline(since_id);
+                if (curTLs != null)
                 {
-                    for (int i = 0; i < curTLs.Count; ++i)
+                    lock (timelines)
                     {
-                        var timeline = curTLs[curTLs.Count - i - 1];
-                        timeline.Unread = true;
-                        timelines.Insert(0, timeline);
-                        if (since_id == null || timeline.id > since_id)
+                        for (int i = 0; i < curTLs.Count; ++i)
                         {
-                            since_id = timeline.id;
+                            var timeline = curTLs[curTLs.Count - i - 1];
+                            timeline.Unread = true;
+                            timelines.Insert(0, timeline);
+                            if (since_id == null || timeline.id > since_id)
+                            {
+                                since_id = timeline.id;
+                            }
                         }
                     }
                 }
@@ -444,13 +478,14 @@ namespace Uwitter
                     }
                     // 本来はtimeline.user_mentionsを見るべきかとも思うが、あてにならないので無条件にメンションぽいものは全部リンクにしちゃう
                     text = Regex.Replace(text, @"@([0-9A-Za-z_]+)", @"<a href=""https://twitter.com/$1"">@$1</a>");
+                    text = Regex.Replace(text, "\n", "<br/>");  // 改行...
                     html.Append(text);
                     html.Append(@"<br/><a class=""created_at"" href=""https://twitter.com/");
                     html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
                     html.Append(@"/statuses/");
                     html.Append(WebUtility.HtmlEncode(timeline.id.ToString()));
                     html.Append(@""">");
-                    html.Append(WebUtility.HtmlEncode(timeline.RelattiveCreatedAt));
+                    html.Append(WebUtility.HtmlEncode(timeline.RelativeCreatedAt));
                     html.Append(@"</a> <span class=""source"">");
                     html.Append(timeline.source);
                     html.Append(@"で</span>");
@@ -461,6 +496,7 @@ namespace Uwitter
                     html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
                 }
             }
+            html.Append(@"<tr><td class=""more"" colspan=""3""><a class=""more"" href="""">もっと見る</a></td></tr>");
             html.Append(@"</table>");
             webMain.Document.Body.InnerHtml = html.ToString();
 
@@ -492,15 +528,6 @@ namespace Uwitter
             else
             {
                 SetNotifyIcon(true);
-            }
-        }
-
-        private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            if (twitter != null)
-            {
-                twitter.Dispose();
-                twitter = null;
             }
         }
 

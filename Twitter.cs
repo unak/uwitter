@@ -156,14 +156,18 @@ namespace Uwitter
         private Thread streamThread = null;
         private Queue<Timeline> timelineQueue = new Queue<Timeline>();
         private bool streamSignal = false;
-        public List<Timeline> GetTimeline(decimal? since_id = null)
+        public List<Timeline> GetTimeline(decimal? since_id = null, bool old = false)
         {
             List<Timeline> list = null;
 
-            if (since_id == null)
+            if (since_id == null || old)
             {
-                // 初回なのでとりあえず30個ほどRESTで取ってくる
+                // 30個ほどRESTで取ってくる
                 var parameters = SetupInitialParameters();
+                if (since_id != null && old)
+                {
+                    parameters.Add("max_id", since_id.ToString());
+                }
                 parameters.Add("count", "30");
                 parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
                 parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("GET", HOME_TIMELINE_URL, parameters, accessTokenSecret)));

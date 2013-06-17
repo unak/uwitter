@@ -40,6 +40,11 @@ tr.hover td.re a {
   display: inline;
 }
 
+td.more 
+{
+  text-align: center;
+}
+
 a img {
   border: none;
   width: 24px;

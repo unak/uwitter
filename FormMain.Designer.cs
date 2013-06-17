@@ -35,6 +35,7 @@
             this.timerCheck = new System.Windows.Forms.Timer(this.components);
             this.editTweet = new System.Windows.Forms.TextBox();
             this.webMain = new System.Windows.Forms.WebBrowser();
+            this.btnTweet = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // notifyIcon
@@ -45,8 +46,8 @@
             // 
             // btnSetting
             // 
-            this.btnSetting.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSetting.Location = new System.Drawing.Point(191, 12);
+            this.btnSetting.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnSetting.Location = new System.Drawing.Point(12, 343);
             this.btnSetting.Name = "btnSetting";
             this.btnSetting.Size = new System.Drawing.Size(81, 23);
             this.btnSetting.TabIndex = 0;
@@ -60,9 +61,10 @@
             // 
             // editTweet
             // 
-            this.editTweet.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.editTweet.AcceptsReturn = true;
+            this.editTweet.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.editTweet.Location = new System.Drawing.Point(0, 41);
+            this.editTweet.Location = new System.Drawing.Point(-1, 270);
             this.editTweet.MaxLength = 140;
             this.editTweet.Multiline = true;
             this.editTweet.Name = "editTweet";
@@ -77,19 +79,33 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.webMain.IsWebBrowserContextMenuEnabled = false;
-            this.webMain.Location = new System.Drawing.Point(0, 114);
+            this.webMain.Location = new System.Drawing.Point(-1, 1);
             this.webMain.MinimumSize = new System.Drawing.Size(20, 20);
             this.webMain.Name = "webMain";
-            this.webMain.Size = new System.Drawing.Size(282, 254);
+            this.webMain.Size = new System.Drawing.Size(282, 263);
             this.webMain.TabIndex = 2;
             this.webMain.WebBrowserShortcutsEnabled = false;
             this.webMain.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webMain_DocumentCompleted);
+            // 
+            // btnTweet
+            // 
+            this.btnTweet.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnTweet.BackColor = System.Drawing.Color.DeepSkyBlue;
+            this.btnTweet.ForeColor = System.Drawing.Color.White;
+            this.btnTweet.Location = new System.Drawing.Point(191, 343);
+            this.btnTweet.Name = "btnTweet";
+            this.btnTweet.Size = new System.Drawing.Size(81, 23);
+            this.btnTweet.TabIndex = 3;
+            this.btnTweet.Text = "ツイート";
+            this.btnTweet.UseVisualStyleBackColor = false;
+            this.btnTweet.Click += new System.EventHandler(this.btnTweet_Click);
             // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 369);
+            this.Controls.Add(this.btnTweet);
             this.Controls.Add(this.webMain);
             this.Controls.Add(this.editTweet);
             this.Controls.Add(this.btnSetting);
@@ -112,6 +128,7 @@
         private System.Windows.Forms.Timer timerCheck;
         private System.Windows.Forms.TextBox editTweet;
         private System.Windows.Forms.WebBrowser webMain;
+        private System.Windows.Forms.Button btnTweet;
     }
 }
 
