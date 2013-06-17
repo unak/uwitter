@@ -29,6 +29,9 @@ namespace Uwitter
 
             this.MouseMove += new MouseEventHandler(FormMain_MouseMove);
 
+            btnTweet.Enabled = false;
+            btnTweet.BackColor = SystemColors.ControlDark;
+
             since_id = null;
             if (!string.IsNullOrEmpty(Properties.Settings.Default.AccessToken) &&
                 !string.IsNullOrEmpty(Properties.Settings.Default.AccessTokenSecret) &&
@@ -106,15 +109,7 @@ namespace Uwitter
         {
             hasRead = true;
 
-            if (this.ActiveControl == editTweet)
-            {
-                if (string.IsNullOrEmpty(editTweet.Text))
-                {
-                    in_reply_to_id = null;
-                    in_reply_to_name = null;
-                }
-            }
-            else
+            if (this.ActiveControl != editTweet)
             {
                 switch (e.KeyChar)
                 {
@@ -127,6 +122,22 @@ namespace Uwitter
                         e.Handled = true;
                         break;
                 }
+            }
+        }
+
+        private void editTweet_TextChanged(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(editTweet.Text))
+            {
+                btnTweet.Enabled = false;
+                btnTweet.BackColor = SystemColors.ControlDark;
+                in_reply_to_id = null;
+                in_reply_to_name = null;
+            }
+            else
+            {
+                btnTweet.Enabled = true;
+                btnTweet.BackColor = Color.DeepSkyBlue;
             }
         }
 

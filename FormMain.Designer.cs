@@ -69,7 +69,8 @@
             this.editTweet.Multiline = true;
             this.editTweet.Name = "editTweet";
             this.editTweet.Size = new System.Drawing.Size(282, 67);
-            this.editTweet.TabIndex = 1;
+            this.editTweet.TabIndex = 2;
+            this.editTweet.TextChanged += new System.EventHandler(this.editTweet_TextChanged);
             // 
             // webMain
             // 
@@ -83,7 +84,7 @@
             this.webMain.MinimumSize = new System.Drawing.Size(20, 20);
             this.webMain.Name = "webMain";
             this.webMain.Size = new System.Drawing.Size(282, 263);
-            this.webMain.TabIndex = 2;
+            this.webMain.TabIndex = 1;
             this.webMain.WebBrowserShortcutsEnabled = false;
             this.webMain.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webMain_DocumentCompleted);
             // 
