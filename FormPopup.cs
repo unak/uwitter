@@ -39,10 +39,5 @@ namespace Uwitter
             webPopup.Document.Body.InnerHtml = html;
             this.Size = webPopup.Document.Body.ScrollRectangle.Size;
         }
-
-        private void FormPopup_Deactivate(object sender, EventArgs e)
-        {
-            this.Hide();
-        }
     }
 }

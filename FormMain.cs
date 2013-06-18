@@ -77,6 +77,14 @@ namespace Uwitter
             SetNotifyIcon();
         }
 
+        private void FormMain_Activated(object sender, EventArgs e)
+        {
+            if (popup != null)
+            {
+                popup.Hide();
+            }
+        }
+
         private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
         {
             if (twitter != null)
