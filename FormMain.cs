@@ -287,9 +287,24 @@ namespace Uwitter
                     {
                         if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
                         {
-                            editTweet.Clear();
                             timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
                             timerCheck.Start();
+                        }
+                    }
+                }
+                else if (className.Equals("delete"))
+                {
+                    if (twitter != null && twitter.IsActive &&
+                        MessageBox.Show("削除しますか?", Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        decimal id = Convert.ToDecimal(href.Replace("about:", ""));
+                        if (twitter.Destroy(id))
+                        {
+                            lock (timelines)
+                            {
+                                timelines.Remove(GetTimelineById(id));
+                                UpdateTimeline(false);
+                            }
                         }
                     }
                 }
@@ -577,7 +592,12 @@ namespace Uwitter
             {
                 html.Append(string.Format(@"<br/><span class=""retweeted""><a href=""https://twitter.com/{0}"">{0}</a>がリツイート</span>", rt_user.screen_name));
             }
-            html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a></td></tr>", timeline.id.ToString(), timeline.user.screen_name));
+            html.Append(string.Format(@"</td><td class=""re""><a class=""reply"" href=""{0}/{1}"">RE</a><br/><a class=""retweet"" href=""{0}"">RT</a>", timeline.id.ToString(), timeline.user.screen_name));
+            if (timeline.user.id_str.Equals(Properties.Settings.Default.UserId))
+            {
+                html.Append(string.Format(@"<br/><a class=""delete"" href=""{0}"">DEL</a>", timeline.id.ToString()));
+            }
+            html.Append(@"</td></tr>");
 
             return html.ToString();
         }

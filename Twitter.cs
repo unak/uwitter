@@ -23,6 +23,7 @@ namespace Uwitter
         const string USER_TIMELINE_URL = @"https://api.twitter.com/1.1/statuses/user_timeline.json";
         const string UPDATE_STATUS_URL = @"https://api.twitter.com/1.1/statuses/update.json";
         const string RETWEET_URL = @"https://api.twitter.com/1.1/statuses/retweet/{0}.json";
+        const string DESTROY_URL = @"https://api.twitter.com/1.1/statuses/destroy/{0}.json";
         const string USERSTREAM_URL = @"https://userstream.twitter.com/1.1/user.json";
 
         string consumerKey;
@@ -298,6 +299,23 @@ namespace Uwitter
             parameters.Add("id", Uri.EscapeDataString(id.ToString()));
             parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
             var url = string.Format(RETWEET_URL, id.ToString());
+            parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("POST", url, parameters, accessTokenSecret)));
+
+            var body = HttpPost(url, parameters);
+            if (string.IsNullOrEmpty(body))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool Destroy(decimal id)
+        {
+            var parameters = SetupInitialParameters();
+            parameters.Add("id", Uri.EscapeDataString(id.ToString()));
+            parameters.Add("oauth_token", Uri.EscapeDataString(accessToken));
+            var url = string.Format(DESTROY_URL, id.ToString());
             parameters.Add("oauth_signature", Uri.EscapeDataString(GenerateSignature("POST", url, parameters, accessTokenSecret)));
 
             var body = HttpPost(url, parameters);
