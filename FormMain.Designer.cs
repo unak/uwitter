@@ -36,6 +36,7 @@
             this.editTweet = new System.Windows.Forms.TextBox();
             this.webMain = new System.Windows.Forms.WebBrowser();
             this.btnTweet = new System.Windows.Forms.Button();
+            this.lblCount = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // notifyIcon
@@ -101,11 +102,22 @@
             this.btnTweet.UseVisualStyleBackColor = false;
             this.btnTweet.Click += new System.EventHandler(this.btnTweet_Click);
             // 
+            // lblCount
+            // 
+            this.lblCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblCount.Location = new System.Drawing.Point(153, 346);
+            this.lblCount.Name = "lblCount";
+            this.lblCount.Size = new System.Drawing.Size(32, 20);
+            this.lblCount.TabIndex = 4;
+            this.lblCount.Text = "140";
+            this.lblCount.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 369);
+            this.Controls.Add(this.lblCount);
             this.Controls.Add(this.btnTweet);
             this.Controls.Add(this.webMain);
             this.Controls.Add(this.editTweet);
@@ -131,6 +143,7 @@
         private System.Windows.Forms.TextBox editTweet;
         private System.Windows.Forms.WebBrowser webMain;
         private System.Windows.Forms.Button btnTweet;
+        private System.Windows.Forms.Label lblCount;
     }
 }
 

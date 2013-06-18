@@ -150,6 +150,20 @@ namespace Uwitter
                 btnTweet.Enabled = true;
                 btnTweet.BackColor = Color.DeepSkyBlue;
             }
+            int count = 140 - editTweet.Text.Length;
+            lblCount.Text = count.ToString();
+            if (count > 20)
+            {
+                lblCount.ForeColor = Color.Black;
+            }
+            else if (count > 10)
+            {
+                lblCount.ForeColor = Color.DarkRed;
+            }
+            else
+            {
+                lblCount.ForeColor = Color.Red;
+            }
         }
 
         private void btnTweet_Click(object sender, EventArgs e)
