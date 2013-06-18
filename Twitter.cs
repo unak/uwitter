@@ -8,6 +8,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -276,7 +277,7 @@ namespace Uwitter
         public bool SendTweet(string tweet, decimal? in_reply_to = null)
         {
             var parameters = SetupInitialParameters();
-            parameters.Add("status", Uri.EscapeDataString(tweet));
+            parameters.Add("status", Regex.Replace(Regex.Replace(Uri.EscapeDataString(tweet), "\\(", "%28"), "\\)", "%29"));
             if (in_reply_to != null)
             {
                 parameters.Add("in_reply_to_status_id", in_reply_to.ToString());
