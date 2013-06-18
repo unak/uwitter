@@ -63,7 +63,7 @@ namespace Uwitter
             webMain.Visible = false;    // 音を消すため
             webMain.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
 
-            popup = new FormPopup();
+            popup = new FormPopup(this);
         }
 
         private void FormMain_Shown(object sender, EventArgs e)
@@ -265,54 +265,18 @@ namespace Uwitter
         {
             hasRead = true;
 
-            var clicked = webMain.Document.GetElementFromPoint(e.MousePosition);
-            while (clicked != null)
-            {
-                if (clicked.TagName == "a" || clicked.TagName == "A")
-                {
-                    break;
-                }
-                clicked = clicked.Parent;
-            }
-
+            var clicked = GetClickedLink(webMain, e.MousePosition);
             if (clicked != null)
             {
                 var className = clicked.GetAttribute("className");
                 var href = clicked.GetAttribute("href");
                 if (className.Equals("reply"))
                 {
-                    in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
-                    in_reply_to_name = Regex.Replace(href, ".*/", "");
-                    var mentions = new List<string>();
-                    var timeline = GetTimelineById(in_reply_to_id.Value);
-                    mentions.Add("@" + in_reply_to_name);
-                    if (timeline != null)
-                    {
-                        var matches = Regex.Matches(WebUtility.HtmlEncode(timeline.text), @"@([0-9A-Za-z_]+)");
-                        for (int i = 0; i < matches.Count; i++)
-                        {
-                            var match = matches[i].Value;
-                            if (mentions.IndexOf(match) < 0 && !match.Equals("@" + Properties.Settings.Default.ScreenName))
-                            {
-                                mentions.Add(match);
-                            }
-                        }
-                    }
-                    editTweet.Text = string.Join(" ", mentions) + " ";
-                    this.ActiveControl = editTweet;
-                    editTweet.Select(editTweet.Text.Length, 0);
+                    EditReply(href);
                 }
                 else if (className.Equals("retweet"))
                 {
-                    if (twitter != null && twitter.IsActive && 
-                        MessageBox.Show("リツイートしますか?", Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                    {
-                        if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
-                        {
-                            timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
-                            timerCheck.Start();
-                        }
-                    }
+                    DoRetweet(href);
                 }
                 else if (className.Equals("delete"))
                 {
@@ -332,28 +296,7 @@ namespace Uwitter
                 }
                 else if (className.Equals("in-reply-to"))
                 {
-                    var id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)/[^/]*$", "$1"));
-                    var user = Regex.Replace(href, ".*/", "");
-                    var timeline = GetTimelineById(id);
-                    if (timeline == null && twitter != null && twitter.IsActive)
-                    {
-                        timeline = twitter.GetUserTimeline(user, id);
-                    }
-                    if (timeline != null)
-                    {
-                        popup.SetHTML("<table id=\"tweets\">" + TimelineToHtml(timeline) + "</table>");
-                        popup.StartPosition = FormStartPosition.Manual;
-                        popup.Location = Cursor.Position;
-                        if (popup.Right >= Screen.PrimaryScreen.Bounds.Right)
-                        {
-                            popup.Left -= popup.Right - Screen.PrimaryScreen.Bounds.Right;
-                        }
-                        if (popup.Bottom >= Screen.PrimaryScreen.Bounds.Bottom)
-                        {
-                            popup.Top -= popup.Bottom - Screen.PrimaryScreen.Bounds.Bottom;
-                        }
-                        popup.Show();
-                    }
+                    ShowChildPopup(popup, href);
                 }
                 else if (className.Equals("more"))
                 {
@@ -406,6 +349,83 @@ namespace Uwitter
         private void webMain_MouseMove(object sender, HtmlElementEventArgs e)
         {
             hasRead = true;
+        }
+
+        public static HtmlElement GetClickedLink(WebBrowser browser, Point pos)
+        {
+            var clicked = browser.Document.GetElementFromPoint(pos);
+            while (clicked != null)
+            {
+                if (clicked.TagName == "a" || clicked.TagName == "A")
+                {
+                    break;
+                }
+                clicked = clicked.Parent;
+            }
+            return clicked;
+        }
+
+        public void EditReply(string href)
+        {
+            in_reply_to_id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)(/.*)$", "$1"));
+            in_reply_to_name = Regex.Replace(href, ".*/", "");
+            var mentions = new List<string>();
+            var timeline = GetTimelineById(in_reply_to_id.Value);
+            mentions.Add("@" + in_reply_to_name);
+            if (timeline != null)
+            {
+                var matches = Regex.Matches(WebUtility.HtmlEncode(timeline.text), @"@([0-9A-Za-z_]+)");
+                for (int i = 0; i < matches.Count; i++)
+                {
+                    var match = matches[i].Value;
+                    if (mentions.IndexOf(match) < 0 && !match.Equals("@" + Properties.Settings.Default.ScreenName))
+                    {
+                        mentions.Add(match);
+                    }
+                }
+            }
+            editTweet.Text = string.Join(" ", mentions) + " ";
+            this.ActiveControl = editTweet;
+            editTweet.Select(editTweet.Text.Length, 0);
+        }
+
+        public void DoRetweet(string href)
+        {
+            if (twitter != null && twitter.IsActive &&
+                MessageBox.Show("リツイートしますか?", Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                if (twitter.Retweet(Convert.ToDecimal(href.Replace("about:", ""))))
+                {
+                    timerCheck.Interval = 3 * 1000; // 数秒待たないとツイートが反映されない
+                    timerCheck.Start();
+                }
+            }
+        }
+
+        public void ShowChildPopup(FormPopup child, string href)
+        {
+            var id = Convert.ToDecimal(Regex.Replace(href, "^[^0-9]*([0-9]+)/[^/]*$", "$1"));
+            var user = Regex.Replace(href, ".*/", "");
+            var timeline = GetTimelineById(id);
+            if (timeline == null && twitter != null && twitter.IsActive)
+            {
+                timeline = twitter.GetUserTimeline(user, id);
+            }
+            if (timeline != null)
+            {
+                child.SetHTML("<table id=\"tweets\">" + FormMain.TimelineToHtml(timeline) + "</table>");
+                child.StartPosition = FormStartPosition.Manual;
+                child.Location = Cursor.Position;
+                if (child.Right >= Screen.PrimaryScreen.Bounds.Right)
+                {
+                    child.Left -= child.Right - Screen.PrimaryScreen.Bounds.Right;
+                }
+                if (child.Bottom >= Screen.PrimaryScreen.Bounds.Bottom)
+                {
+                    child.Top -= child.Bottom - Screen.PrimaryScreen.Bounds.Bottom;
+                }
+                child.Show();
+            }
         }
 
         private void ScrollTimeline(int count)

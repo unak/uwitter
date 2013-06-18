@@ -59,6 +59,8 @@
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "FormPopup";
+            this.Activated += new System.EventHandler(this.FormPopup_Activated);
+            this.VisibleChanged += new System.EventHandler(this.FormPopup_VisibleChanged);
             this.ResumeLayout(false);
 
         }

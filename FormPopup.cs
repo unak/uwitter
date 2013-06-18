@@ -1,22 +1,39 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Uwitter
 {
     public partial class FormPopup : Form
     {
-        public FormPopup()
+        private FormPopup child;
+        private FormMain main;
+
+        public FormPopup(FormMain main)
         {
             InitializeComponent();
 
+            this.main = main;
+
             webPopup.Visible = false;    // 音を消すため
             webPopup.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
+        }
+
+        private void FormPopup_Activated(object sender, EventArgs e)
+        {
+            if (child != null)
+            {
+                child.Hide();
+            }
+        }
+
+        private void FormPopup_VisibleChanged(object sender, EventArgs e)
+        {
+            if (this.Visible == false && child != null)
+            {
+                child.Hide();
+            }
         }
 
         private void webPopup_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
@@ -27,7 +44,28 @@ namespace Uwitter
 
         private void webPopup_DocumentClick(object sender, HtmlElementEventArgs e)
         {
-            // XXX: FIX ME!!!
+            HtmlElement clicked = FormMain.GetClickedLink(webPopup, e.MousePosition);
+            if (clicked != null)
+            {
+                var className = clicked.GetAttribute("className");
+                var href = clicked.GetAttribute("href");
+                if (className.Equals("reply"))
+                {
+                    main.EditReply(href);
+                }
+                else if (className.Equals("retweet"))
+                {
+                    main.DoRetweet(href);
+                }
+                else if (className.Equals("in-reply-to"))
+                {
+                    main.ShowChildPopup(child, href);
+                }
+                else if (!string.IsNullOrEmpty(href))
+                {
+                    Process.Start(href);
+                }
+            }
         }
 
         public void SetHTML(string html)
@@ -38,6 +76,12 @@ namespace Uwitter
             }
             webPopup.Document.Body.InnerHtml = html;
             this.Size = webPopup.Document.Body.ScrollRectangle.Size;
+
+            // 子供を作っておく
+            if (child == null)
+            {
+                child = new FormPopup(main);
+            }
         }
     }
 }
