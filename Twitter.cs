@@ -202,7 +202,9 @@ namespace Uwitter
                 streamThread = new Thread(delegate()
                 {
                     var serializer = new DataContractJsonSerializer(typeof(Timeline));
-                    using (var reader = new StreamReader(stream))
+                    //using (var reader = new StreamReader(stream))
+                    //本当はusing使ってリソースを解放すべきだが、あっちが閉じてくれないと終わらない
+                    var reader = new StreamReader(stream);
                     {
                         string line;
                         while (!streamSignal && (line = reader.ReadLine()) != null)
@@ -224,7 +226,6 @@ namespace Uwitter
                             // XXX:FIXME!!!
                         }
                     }
-                    stream.Dispose();
                 });
                 streamThread.Start();
             }
