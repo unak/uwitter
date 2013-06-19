@@ -590,7 +590,7 @@ namespace Uwitter
             html.Append(@""">@");
             html.Append(WebUtility.HtmlEncode(timeline.user.screen_name));
             html.Append(@"</a><br/>");
-            var text = WebUtility.HtmlEncode(timeline.text);
+            var text = timeline.text;
             if (timeline.entities != null && timeline.entities.urls != null)
             {
                 foreach (var url in timeline.entities.urls)
