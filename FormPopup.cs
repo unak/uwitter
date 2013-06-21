@@ -17,7 +17,7 @@ namespace Uwitter
             this.main = main;
 
             webPopup.Visible = false;    // 音を消すため
-            webPopup.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
+            webPopup.DocumentText = string.Format("<html><head><style type=\"text/css\">{0}</style><script type=\"text/javascript\">{1}</script></head><body class=\"popup\"><table id=\"tweets\"></table></body></html>", Properties.Resources.css, Properties.Resources.js);
         }
 
         private void FormPopup_Activated(object sender, EventArgs e)
