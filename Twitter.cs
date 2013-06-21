@@ -278,7 +278,11 @@ namespace Uwitter
         public bool SendTweet(string tweet, decimal? in_reply_to = null)
         {
             var parameters = SetupInitialParameters();
-            parameters.Add("status", Regex.Replace(Regex.Replace(Uri.EscapeDataString(tweet), "\\(", "%28"), "\\)", "%29"));
+            var text = Regex.Replace(Uri.EscapeDataString(tweet), "[\\(\\)\\?]", delegate(Match match)
+            {
+                return string.Format("%{0:X2}", match.Value[0]);
+            });
+            parameters.Add("status", text);
             if (in_reply_to != null)
             {
                 parameters.Add("in_reply_to_status_id", in_reply_to.ToString());
