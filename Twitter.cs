@@ -199,7 +199,7 @@ namespace Uwitter
                     return null;
                 }
 
-                streamThread = new Thread(delegate()
+                streamThread = new Thread(() =>
                 {
                     var serializer = new DataContractJsonSerializer(typeof(Timeline));
                     //using (var reader = new StreamReader(stream))
@@ -278,7 +278,7 @@ namespace Uwitter
         public bool SendTweet(string tweet, decimal? in_reply_to = null)
         {
             var parameters = SetupInitialParameters();
-            var text = Regex.Replace(Uri.EscapeDataString(tweet), "[\\(\\)\\?]", delegate(Match match)
+            var text = Regex.Replace(Uri.EscapeDataString(tweet), "[\\(\\)\\?/]", (Match match) =>
             {
                 return string.Format("%{0:X2}", match.Value[0]);
             });

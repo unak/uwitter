@@ -649,7 +649,7 @@ namespace Uwitter
             Timeline timeline = null;
             lock (timelines)
             {
-                timeline = timelines.Find(delegate(Timeline elem)
+                timeline = timelines.Find((Timeline elem) =>
                 {
                     if (elem.retweeted_status != null)
                     {
